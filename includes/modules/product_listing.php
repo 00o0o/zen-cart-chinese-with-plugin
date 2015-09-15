@@ -3,10 +3,10 @@
  * product_listing module
  *
  * @package modules
- * @copyright Copyright 2003-2007 Zen Cart Development Team
+ * @copyright Copyright 2003-2011 Zen Cart Development Team
  * @copyright Portions Copyright 2003 osCommerce
  * @license http://www.zen-cart.com/license/2_0.txt GNU Public License V2.0
- * @version $Id: product_listing.php 6787 2007-08-24 14:06:33Z drbyte $
+ * @version $Id: product_listing.php 18695 2011-05-04 05:24:19Z drbyte $
  * UPDATED TO WORK WITH COLUMNAR PRODUCT LISTING For Zen Cart v1.3.6 - 10/25/2006
  */
 if (!defined('IS_ADMIN_FLAG')) {
@@ -16,10 +16,11 @@ if (!defined('IS_ADMIN_FLAG')) {
 // Upgraded to be compatible with Zen-cart v 1.2.0d by Rajeev Tandon - Aug 3, 2004
 // Column Layout Support (Grid Layout) upgraded for v1.3.0 compatibility DrByte 04/04/2006
 // Column Layout Support (Grid Layout) upgraded for v1.5.0 compatibility and changed to customer control asarfraz July 26 2012
-// Modified for admin control of customer option by Glenn Herbert (gjh42) 2012-09-20
+// Modified for admin control of customer option by Glenn Herbert (gjh42) 2012-09-20   test 20120929 grid sorter
 //
 if (!defined('PRODUCT_LISTING_LAYOUT_STYLE')) define('PRODUCT_LISTING_LAYOUT_STYLE',(isset($_GET['view']) ? $_GET['view'] : 'rows'));
 if (!defined('PRODUCT_LISTING_COLUMNS_PER_ROW')) define('PRODUCT_LISTING_COLUMNS_PER_ROW',3);
+if (!defined('PRODUCT_LISTING_GRID_SORT')) define('PRODUCT_LISTING_GRID_SORT',0);
 $product_listing_layout_style = isset($_GET['view'])? $_GET['view']: PRODUCT_LISTING_LAYOUT_STYLE;
 $row = 0;
 $col = 0;
@@ -35,7 +36,7 @@ $zco_notifier->notify('NOTIFY_MODULE_PRODUCT_LISTING_RESULTCOUNT', $listing_spli
 $how_many = 0;
 
 // Begin Row Layout Header
-if ($product_listing_layout_style == 'rows') {		// For Column Layout (Grid Layout) add on module
+if ($product_listing_layout_style == 'rows' or PRODUCT_LISTING_GRID_SORT) {		// For Column Layout (Grid Layout) add on module
 
 $list_box_contents[0] = array('params' => 'class="productListing-rowheading"');
 
@@ -74,9 +75,11 @@ for ($col=0, $n=sizeof($column_list); $col<$n; $col++) {
     $zc_col_count_description++;
     break;
     case 'PRODUCT_LIST_IMAGE':
-    $lc_text = TABLE_HEADING_IMAGE;
-    $lc_align = 'center';
-    $zc_col_count_description++;
+    if ($product_listing_layout_style == 'rows') { //skip if grid
+      $lc_text = TABLE_HEADING_IMAGE;
+      $lc_align = 'center';
+      $zc_col_count_description++;
+    }
     break;
   }
 
@@ -91,6 +94,10 @@ for ($col=0, $n=sizeof($column_list); $col<$n; $col++) {
                                       'text' => $lc_text );
 }
 
+  if ($product_listing_layout_style == 'columns') { //grid sort option
+    $grid_sort = $list_box_contents[0];
+    $list_box_contents = array();
+  }
 } // End Row Layout Header used in Column Layout (Grid Layout) add on module
 
 /////////////  HEADER ROW ABOVE /////////////////////////////////////////////////
@@ -141,7 +148,7 @@ if ($listing_split->number_of_rows > 0) {
         if (isset($_GET['manufacturers_id'])) {
           $lc_text = '<h3 class="itemTitle"><a href="' . zen_href_link(zen_get_info_page($listing->fields['products_id']), 'cPath=' . (($_GET['manufacturers_id'] > 0 and $_GET['filter_id']) > 0 ?  zen_get_generated_category_path_rev($_GET['filter_id']) : ($_GET['cPath'] > 0 ? zen_get_generated_category_path_rev($_GET['cPath']) : zen_get_generated_category_path_rev($listing->fields['master_categories_id']))) . '&products_id=' . $listing->fields['products_id']) . '">' . $listing->fields['products_name'] . '</a></h3><div class="listingDescription">' . zen_trunc_string(zen_clean_html(stripslashes(zen_get_products_description($listing->fields['products_id'], $_SESSION['languages_id']))), PRODUCT_LIST_DESCRIPTION) . '</div>' ;
         } else {
-          $lc_text = '<h3 class="itemTitle"><a href="' . zen_href_link(zen_get_info_page($listing->fields['products_id']), 'cPath=' . (($_GET['manufacturers_id'] > 0 and $_GET['filter_id']) > 0 ?  zen_get_generated_category_path_rev($_GET['filter_id']) : ($_GET['cPath'] > 0 ? zen_get_generated_category_path_rev($_GET['cPath']) : zen_get_generated_category_path_rev($listing->fields['master_categories_id']))) . '&products_id=' . $listing->fields['products_id']) . '">' . $listing->fields['products_name'] . '</a></h3><div class="listingDescription">' . zen_trunc_string(zen_clean_html(stripslashes(zen_get_products_description($listing->fields['products_id'], $_SESSION['languages_id']))), PRODUCT_LIST_DESCRIPTION) . '</div>';
+          $lc_text = '<h3 class="itemTitle"><a href="' . zen_href_link(zen_get_info_page($listing->fields['products_id']), 'cPath=' . (($_GET['manufacturers_id'] > 0 and $_GET['filter_id'] > 0) ?  zen_get_generated_category_path_rev($_GET['filter_id']) : ($_GET['cPath'] > 0 ? zen_get_generated_category_path_rev($_GET['cPath']) : zen_get_generated_category_path_rev($listing->fields['master_categories_id']))) . '&products_id=' . $listing->fields['products_id']) . '">' . $listing->fields['products_name'] . '</a></h3><div class="listingDescription">' . zen_trunc_string(zen_clean_html(stripslashes(zen_get_products_description($listing->fields['products_id'], $_SESSION['languages_id']))), PRODUCT_LIST_DESCRIPTION) . '</div>';
         }
         break;
         case 'PRODUCT_LIST_MANUFACTURER':

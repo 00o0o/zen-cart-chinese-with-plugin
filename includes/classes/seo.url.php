@@ -1,12 +1,12 @@
 <?php
 /*
 	+----------------------------------------------------------------------+
-	|	Ultimate SEO URLs For Zen Cart, version 2.101                      |
+	|	Ultimate SEO URLs For Zen Cart, version 2.212                      |
 	+----------------------------------------------------------------------+
 	|                                                                      |
 	|	Derrived from Ultimate SEO URLs v2.1 for osCommerce by Chemo       |
 	|                                                                      |
-	|	Portions Copyright 2011, Andrew Ballanger                          |
+	|	Portions Copyright 2011-2012, Andrew Ballanger                     |
 	|                                                                      |
 	|	Portions Copyright 2005, Joshua Dechant                            |
 	|                                                                      |
@@ -25,462 +25,289 @@
 	+----------------------------------------------------------------------+
 */
 
-	require_once(dirname(__FILE__) . '/seo.install.php');
+class SEO_URL {
+	public $canonical;
 
-	class SEO_URL{
-		var $cache;
-		var $languages_id;
-		var $attributes;
-		var $base_url;
-		var $base_url_ssl;
-		var $reg_anchors;
-		var $cache_query;
-		var $cache_file;
-		var $data;
-		var $need_redirect;
-		var $is_seopage;
-		var $uri;
-		var $real_uri;
-		var $uri_parsed;
-		var $db;
-		var $installer;
-		// START SEO_URLS_FILTER_PCRE PATCH
-		protected static $unicodeEnabled;
-		// END SEO_URLS_FILTER_PCRE PATCH
+	protected $cache;
+	protected $languages_id;
+	protected $base_url;
+	protected $base_url_ssl;
+	protected $reg_anchors;
+	protected $cache_query;
+	protected $cache_file;
+	protected $data;
+	protected $need_redirect;
+	protected $is_seopage;
+	protected $uri;
+	protected $real_uri;
+	protected $uri_parsed;
+	protected $redirect_url;
+	protected static $unicodeEnabled;
 
-		function SEO_URL($languages_id=''){
-			global $session_started;
+	private $filter_pcre;
+	private $filter_char;
 
-			$this->installer = &new SEO_URL_INSTALLER();
+	function __construct($languages_id='') {
+		global $session_started;
 
-			$this->db = &$GLOBALS['db'];
+		if ($languages_id == '') $languages_id = $_SESSION['languages_id'];
+		$this->languages_id = (int)$languages_id;
 
-			if ($languages_id == '') $languages_id = $_SESSION['languages_id'];
+		$this->data = array();
+		$this->base_url = HTTP_SERVER;
+		$this->base_url_ssl = HTTPS_SERVER;
+		$this->cache = array();
 
-			$this->languages_id = (int)$languages_id;
+		$this->reg_anchors = array(
+			'products_id' => '-p-',
+			'cPath' => '-c-',
+			'manufacturers_id' => '-m-',
+			'pID' => '-pi-',
+			'products_id_review' => '-pr-',
+			'products_id_review_info' => '-pri-',
+			'id' => '-ezp-',
+		);
 
-			$this->data = array();
+		if(null === self::$unicodeEnabled) {
+			self::$unicodeEnabled = (@preg_match('/\pL/u', 'a')) ? true : false;
+		}
 
-			$seo_pages = array(
-				FILENAME_DEFAULT,
-				FILENAME_PRODUCT_INFO,
-				'product_free_shipping_info', 
-				'product_music_info', 
-				'document_product_info', 
-				'document_general_info', 
-				FILENAME_POPUP_IMAGE,
-				FILENAME_PRODUCT_REVIEWS,
-				FILENAME_PRODUCT_REVIEWS_INFO,
-				FILENAME_EZPAGES,
-			);
+		$this->filter_pcre = defined('SEO_URLS_FILTER_PCRE') ? $this->expand(SEO_URLS_FILTER_PCRE, true) : 'false';
+		$this->filter_char = defined('SEO_URLS_FILTER_CHARS') ? $this->expand(SEO_URLS_FILTER_PCRE) : 'false';
 
-			// News & Article Manager SEO support
-			if (defined('FILENAME_NEWS_INDEX')) $seo_pages[] = FILENAME_NEWS_INDEX;
-			if (defined('FILENAME_NEWS_ARTICLE')) $seo_pages[] = FILENAME_NEWS_ARTICLE;
-			if (defined('FILENAME_NEWS_COMMENTS')) $seo_pages[] = FILENAME_NEWS_COMMENTS;
-			if (defined('FILENAME_NEWS_ARCHIVE')) $seo_pages[] = FILENAME_NEWS_ARCHIVE;
-			if (defined('FILENAME_NEWS_RSS')) $seo_pages[] = FILENAME_NEWS_RSS;
+		if(defined('SEO_USE_CACHE_GLOBAL') && SEO_USE_CACHE_GLOBAL == 'true'){
+			$this->cache_file = 'seo_urls_v2_';
+			$this->cache_gc(); // Cleanup Cache
 
-			// Info Manager (Open Operations)
-			if (defined('FILENAME_INFO_MANAGER')) $seo_pages[] = FILENAME_INFO_MANAGER;
+			// Generate enabled caches
+			if(SEO_USE_CACHE_PRODUCTS == 'true') $this->generate_products_cache();
+			if(SEO_USE_CACHE_CATEGORIES == 'true') $this->generate_categories_cache();
+			if(SEO_USE_CACHE_MANUFACTURERS == 'true') $this->generate_manufacturers_cache();
+			if(SEO_USE_CACHE_EZ_PAGES == 'true') $this->generate_ezpages_cache();
+		}
 
-			$this->attributes = array(
-				'PHP_VERSION' => PHP_VERSION,
-				'SESSION_STARTED' => $session_started,
-				'SID' => (defined('SID') && $this->not_null(SID) ? SID : ''),
-				'SEO_ENABLED' => defined('SEO_ENABLED') ? SEO_ENABLED : 'false',
-				'SEO_ADD_CPATH_TO_PRODUCT_URLS' => defined('SEO_ADD_CPATH_TO_PRODUCT_URLS') ? SEO_ADD_CPATH_TO_PRODUCT_URLS : 'false',
-				// START SEO-ADD-PRODUCT-CAT PATCH
-				'SEO_ADD_CAT_PARENT' => defined('SEO_ADD_CAT_PARENT') ? SEO_ADD_CAT_PARENT : 'true',
-				// END SEO-ADD-PRODUCT-CAT PATCH
-				'SEO_ADD_PRODUCT_CAT' => defined('SEO_ADD_PRODUCT_CAT') ? SEO_ADD_PRODUCT_CAT : 'true',
-				'SEO_URLS_USE_W3C_VALID' => defined('SEO_URLS_USE_W3C_VALID') ? SEO_URLS_USE_W3C_VALID : 'true',
-				'USE_SEO_CACHE_GLOBAL' => defined('USE_SEO_CACHE_GLOBAL') ? USE_SEO_CACHE_GLOBAL : 'false',
-				'USE_SEO_CACHE_PRODUCTS' => defined('USE_SEO_CACHE_PRODUCTS') ? USE_SEO_CACHE_PRODUCTS : 'false',
-				'USE_SEO_CACHE_CATEGORIES' => defined('USE_SEO_CACHE_CATEGORIES') ? USE_SEO_CACHE_CATEGORIES : 'false',
-				'USE_SEO_CACHE_MANUFACTURERS' => defined('USE_SEO_CACHE_MANUFACTURERS') ? USE_SEO_CACHE_MANUFACTURERS : 'false',
-				'USE_SEO_CACHE_ARTICLES' => defined('USE_SEO_CACHE_ARTICLES') ? USE_SEO_CACHE_ARTICLES : 'false',
-				'USE_SEO_CACHE_INFO_PAGES' => defined('USE_SEO_CACHE_INFO_PAGES') ? USE_SEO_CACHE_INFO_PAGES : 'false',
-				'USE_SEO_CACHE_EZ_PAGES' => defined('USE_SEO_CACHE_EZ_PAGES') ? USE_SEO_CACHE_EZ_PAGES : 'false',
-				'USE_SEO_REDIRECT' => defined('USE_SEO_REDIRECT') ? USE_SEO_REDIRECT : 'false',
-				'SEO_REWRITE_TYPE' => defined('SEO_REWRITE_TYPE') ? SEO_REWRITE_TYPE : 'false',
-				'SEO_URLS_FILTER_SHORT_WORDS' => defined('SEO_URLS_FILTER_SHORT_WORDS') ? SEO_URLS_FILTER_SHORT_WORDS : 'false',
-				// START SEO_URLS_FILTER_PCRE PATCH
-				'SEO_URLS_FILTER_PCRE' => defined('SEO_URLS_FILTER_PCRE') ? $this->expand(SEO_URLS_FILTER_PCRE, true) : 'false',
-				// END SEO_URLS_FILTER_PCRE PATCH
-				'SEO_CHAR_CONVERT_SET' => defined('SEO_CHAR_CONVERT_SET') ? $this->expand(SEO_CHAR_CONVERT_SET) : 'false',
-				'SEO_REMOVE_ALL_SPEC_CHARS' => defined('SEO_REMOVE_ALL_SPEC_CHARS') ? SEO_REMOVE_ALL_SPEC_CHARS : 'false',
-				'SEO_PAGES' => $seo_pages,
-				'SEO_INSTALLER' => $this->installer->attributes
-			);
+		$this->check_canonical();
 
-			$this->base_url = HTTP_SERVER;
-			$this->base_url_ssl = HTTPS_SERVER;
-			$this->cache = array();
+		if(defined('SEO_USE_REDIRECT') && SEO_USE_REDIRECT == 'true') {
+			$this->check_redirect();
+		}
+	}
 
-			$this->reg_anchors = array(
-				'products_id' => '-p-',
-				'cPath' => '-c-',
-				'manufacturers_id' => '-m-',
-				'pID' => '-pi-',
-				'products_id_review' => '-pr-',
-				'products_id_review_info' => '-pri-',
+	/**
+	 * Generates the link to the requested page suitable for use in an href
+	 * paramater.
+	 *
+	 * @param string $page the name of the page
+	 * @param string $parameters any paramaters for the page
+	 * @param string $connection 'NONSSL' or 'SSL' the type of connection to use
+	 * @param bool $add_session_id true if a session id be added to the url, false otherwise
+	 * @param bool $search_engine_safe true if we should use search engine safe urls, false otherwise
+	 * @param bool $static true if this is a static page (no paramaters)
+	 * @param bool $use_dir_ws_catalog true if we should use the DIR_WS_CATALOG / DIR_WS_HTTPS_CATALOG from the configuration
+	 * @return NULL|string|unknown
+	 */
+	function href_link($page = '', $parameters = '', $connection = 'NONSSL', $add_session_id = true, $search_engine_safe = true, $static = false, $use_dir_ws_catalog = true) {
+		// Do not rewrite when disabled
+		if(!defined('SEO_ENABLED') || SEO_ENABLED == 'false') {
+			return null;
+		}
 
-				// News & Article Manager SEO support
-				'news_article_id' => '-a-',
-				'news_comments_article_id' => '-a-',
-				'news_dates' => '/',
-				'news_archive_dates' => '/archive/',
-				'news_rss_feed' => '/rss',
+		// Much of the code in Zen Cart creates the dynamic link by itself before
+		// passing the code to zen_href_link and then just claims the link is
+		// static and passes no params. Much of the code also has the bad habit
+		// of claiming a link is "static" when it is not. So we ignore the value
+		// of "static" and start by checking if the page starts with index.php?
+		if(strstr($page, 'index.php?') !== false) {
 
-				// Info Manager (Open Operations)
-				'info_manager_page_id' => '-i-',
+			// If we find the main_page parse the URL
+			$result = array();
+			if(preg_match('/[?&]main_page=([^&]*)/', $page, $result) === 1) {
+				$temp = parse_url($page);
 
-				// EZ-Pages SEO support
-				'id' => '-ezp-',
-			);
+				// Adjust the page and parameters to be correct. This mainly
+				// fixes the handling of EZ-Pages (but may fix additional pages).
+				$page = $result[1];
 
-			if ($this->attributes['USE_SEO_CACHE_GLOBAL'] == 'true'){
-				$this->cache_file = 'seo_urls_v2_';
-				$this->cache_gc();
-				if ( $this->attributes['USE_SEO_CACHE_PRODUCTS'] == 'true' ) $this->generate_products_cache();
-				if ( $this->attributes['USE_SEO_CACHE_CATEGORIES'] == 'true' ) $this->generate_categories_cache();
-				if ( $this->attributes['USE_SEO_CACHE_MANUFACTURERS'] == 'true' ) $this->generate_manufacturers_cache();
-				if ( $this->attributes['USE_SEO_CACHE_ARTICLES'] == 'true' && defined('TABLE_NEWS_ARTICLES_TEXT')) $this->generate_news_articles_cache();
-				if ( $this->attributes['USE_SEO_CACHE_INFO_PAGES'] == 'true' && defined('TABLE_INFO_MANAGER')) $this->generate_info_manager_cache();
-				if ( $this->attributes['USE_SEO_CACHE_EZ_PAGES'] == 'true' ) $this->generate_ezpages_cache();
+				$temp['query'] = preg_replace('/main_page=' . $result[1] . '/', '', $temp['query']);
+				$parameters = $temp['query'] . ($parameters != '' ? '&' . $parameters : '');
 			}
+		}
 
-			if ($this->attributes['USE_SEO_REDIRECT'] == 'true'){
-				$this->check_redirect();
-			} # end if
+		// Remove the end from the page if it is present
+		$pos = strrpos($page, SEO_URL_END);
+		if($pos !== false) {
+			$page = substr($page, 0, $pos);
+		}
+		unset($pos);
 
-			if (null === self::$unicodeEnabled) {
-				self::$unicodeEnabled = (@preg_match('/\pL/u', 'a')) ? true : false;
+		// Do not rewrite if page is not in the list of pages to rewrite
+		$sefu = explode(',', str_replace(' ', '', SEO_URLS_ONLY_IN));
+		if(zen_not_null(SEO_URLS_ONLY_IN) && !in_array($page, $sefu)) {
+			return null;
+		}
+
+		// don't rewrite the paypal IPN notify url
+		if($page == 'ipn_main_handler.php') {
+			return null;
+		}
+
+		if($connection == 'NONSSL') {
+			$link = $this->base_url;
+		}
+		else if($connection == 'SSL') {
+			if(ENABLE_SSL == 'true') {
+				$link = $this->base_url_ssl ;
 			}
-		} # end constructor
-
-		function href_link($page = '', $parameters = '', $connection = 'NONSSL', $add_session_id = true, $static = false, $use_dir_ws_catalog = true) {
-			// don't rewrite when disabled
-			// don't rewrite images, css, js, xml, real html files, etc
-			if ( ($this->attributes['SEO_ENABLED'] == 'false') || (preg_match('/(.+)\.(html?|xml|css|js|png|jpe?g|gif|bmp|tiff?|ico|gz|zip|rar)$/i', $page)) ) {
-				return $this->stock_href_link($page, $parameters, $connection, $add_session_id, true, $static, $use_dir_ws_catalog);
-			}
-
-			// don't rewrite the paypal IPN notify url
-			if ($page == 'ipn_main_handler.php') {
-				return $this->stock_href_link($page, $parameters, $connection, $add_session_id, true, $static, $use_dir_ws_catalog);
-			}
-			// don't rewrite the zhifubao ATN notify url
-			if ($page == 'atn_main_handler.php') {
-				return $this->stock_href_link($page, $parameters, $connection, $add_session_id, true, $static, $use_dir_ws_catalog);
-			}
-
-			// don't rewrite the IPS ATN notify url
-			if ($page == 'ips_main_handler.php') {
-				return $this->stock_href_link($page, $parameters, $connection, $add_session_id, true, $static, $use_dir_ws_catalog);
-			}
-
-			if ((!in_array($page, $this->attributes['SEO_PAGES'])) || (($page == FILENAME_DEFAULT) && (!preg_match('/(cpath|manufacturers_id)/i', $parameters)))) {
-				if ($page == FILENAME_DEFAULT) {
-					$page = '';
-				} else {
-					$page = $page . '.html';
-				}
-			}
-
-			if ($connection == 'NONSSL') {
+			else {
 				$link = $this->base_url;
-			} elseif ($connection == 'SSL') {
-				if (ENABLE_SSL == 'true') {
-					$link = $this->base_url_ssl ;
-				} else {
-					$link = $this->base_url;
+			}
+		}
+
+		if($use_dir_ws_catalog) {
+			if($connection == 'SSL' && ENABLE_SSL == 'true') {
+				$link .= DIR_WS_HTTPS_CATALOG;
+			}
+			else {
+				$link .= DIR_WS_CATALOG;
+			}
+		}
+		// We start with no separator, so define one.
+		$separator = '?';
+		if (zen_not_null($parameters)) {
+			$link .= $this->parse_parameters($page, $parameters, $separator);
+		} else {
+			$link .= ($page != FILENAME_DEFAULT ? $page . SEO_URL_END : '');
+		}
+
+		$link = $this->add_sid($link, $add_session_id, $connection, $separator);
+
+		return htmlspecialchars($link, ENT_QUOTES, CHARSET, false);
+	}
+
+	/**
+	 * Adds the sid to the end of the URL if needed. If a page cache has been
+	 * enabled and no customer is logged in the sid is replaced with '<zinsid>'.
+	 *
+	 * @param string $link current URL.
+	 * @param bool $add_session_id true if a session id be added to the url, false otherwise
+	 * @param string $connection 'NONSSL' or 'SSL' the type of connection to use
+	 * @param string $separator the separator to use between the link and this paramater (if added)
+	 * @return unknown
+	 */
+	function add_sid($link, $add_session_id, $connection, $separator) {
+		global $request_type, $http_domain, $https_domain, $session_started;
+
+		if(($add_session_id == true) && ($session_started) && (SESSION_FORCE_COOKIE_USE == 'False')) {
+			if(defined('SID') && zen_not_null(SID)) {
+				$_sid = SID;
+			}
+			else if((($request_type == 'NONSSL') && ($connection == 'SSL') && (ENABLE_SSL == 'true')) || (($request_type == 'SSL') && ($connection == 'NONSSL'))) {
+				if($http_domain != $https_domain) {
+					$_sid = zen_session_name() . '=' . zen_session_id();
 				}
 			}
+		}
 
-			if ($use_dir_ws_catalog) {
-				if ($connection == 'SSL' && ENABLE_SSL == 'true') {
-					$link .= DIR_WS_HTTPS_CATALOG;
-				} else {
-					$link .= DIR_WS_CATALOG;
-				}
-			}
+		switch(true){
+			case (!isset($_SESSION['customer_id']) && defined('ENABLE_PAGE_CACHE') && ENABLE_PAGE_CACHE == 'true' && class_exists('page_cache')):
+				$return = $link . $separator . '<zensid>';
+				break;
+			case (zen_not_null($_sid)):
+				$return = $link . $separator . $_sid;
+				break;
+			default:
+				$return = $link;
+				break;
+		}
+		return $return;
+	}
 
-			if (strstr($page, '?')) {
-				$separator = '&';
-			} else {
-				$separator = '?';
-			}
 
-			if ($this->not_null($parameters)) {
-				$link .= $this->parse_parameters($page, $parameters, $separator);
-			} else {
-				// support SEO pages with no parameters
-				switch ($page) {
-					case FILENAME_NEWS_RSS:
-						$link .= $this->make_url($page, FILENAME_NEWS_INDEX, 'news_rss_feed', '', '.xml', $separator);
-						break;
-					case FILENAME_NEWS_ARCHIVE:
-						$link .= $this->make_url($page, FILENAME_NEWS_INDEX, 'news_archive_dates', '', '', $separator);
-						break;
-					case FILENAME_NEWS_INDEX:
-						$link .= $this->make_url($page, FILENAME_NEWS_INDEX, 'news_dates', '', '', $separator);
-						break;
-
-					default:
-						$link .= $page;
-						break;
-				}
-			}
-
-			$link = $this->add_sid($link, $add_session_id, $connection, $separator);
-
-			switch($this->attributes['SEO_URLS_USE_W3C_VALID']){
-				case 'true':
-					if (!isset($_SESSION['customer_id']) && defined('ENABLE_PAGE_CACHE') && ENABLE_PAGE_CACHE == 'true' && class_exists('page_cache')){
-						return $link;
-					} else {
-						return htmlspecialchars(utf8_encode($link));
-					}
-					break;
-				case 'false':
-				default:
-					return $link;
-					break;
-			}
-		} # end function
-
-		function stock_href_link($page = '', $parameters = '', $connection = 'NONSSL', $add_session_id = true, $search_engine_safe = true, $static = false, $use_dir_ws_catalog = true) {
-			global $request_type, $session_started, $http_domain, $https_domain;
-
-			if (!$this->not_null($page)) {
-				die('</td></tr></table></td></tr></table><br /><br /><strong class="note">Error!<br /><br />Unable to determine the page link!</strong><br /><br />');
-			}
-
-			if ($connection == 'NONSSL') {
-				$link = HTTP_SERVER;
-			} elseif ($connection == 'SSL') {
-				if (ENABLE_SSL == 'true') {
-					$link = HTTPS_SERVER ;
-				} else {
-					$link = HTTP_SERVER;
-				}
-			} else {
-				die('</td></tr></table></td></tr></table><br /><br /><strong class="note">Error!<br /><br />Unable to determine connection method on a link!<br /><br />Known methods: NONSSL SSL</strong><br /><br />');
-			}
-
-    if ($use_dir_ws_catalog) {
-      if ($connection == 'SSL') {
-        $link .= DIR_WS_HTTPS_CATALOG;
-      } else {
-        $link .= DIR_WS_CATALOG;
-      }
-    }
-
-			if (!$static) {
-				if ($this->not_null($parameters)) {
-					$link .= 'index.php?main_page='. $page . "&" . $this->output_string($parameters);
-				} else {
-					$link .= 'index.php?main_page=' . $page;
-				}
-			} else {
-				if ($this->not_null($parameters)) {
-					$link .= $page . "?" . $this->output_string($parameters);
-				} else {
-					$link .= $page;
-				}
-			}
-
-			$separator = '&';
-
-			while ( (substr($link, -1) == '&') || (substr($link, -1) == '?') ) $link = substr($link, 0, -1);
-
-			if ( ($add_session_id == true) && ($session_started == true) && (SESSION_FORCE_COOKIE_USE == 'False') ) {
-				if ($this->not_null($this->attributes['SID'])) {
-					$_sid = $this->attributes['SID'];
-				} elseif ( ( ($request_type == 'NONSSL') && ($connection == 'SSL') && (ENABLE_SSL == 'true') ) || ( ($request_type == 'SSL') && ($connection == 'NONSSL') ) ) {
-					if ($http_domain != $https_domain) {
-						$_sid = session_name() . '=' . session_id();
-					}
-				}
-			}
-
-			// clean up the link before processing
-			while (strstr($link, '&&')) $link = str_replace('&&', '&', $link);
-			while (strstr($link, '&amp;&amp;')) $link = str_replace('&amp;&amp;', '&amp;', $link);
-
-			switch(true){
-				case (!isset($_SESSION['customer_id']) && defined('ENABLE_PAGE_CACHE') && ENABLE_PAGE_CACHE == 'true' && class_exists('page_cache')):
-					$page_cache = true;
-					$return = $link . $separator . '<zensid>';
-					break;
-				case (isset($_sid)):
-					$page_cache = false;
-					$return = $link . $separator . $_sid;
-					break;
-				default:
-					$page_cache = false;
-					$return = $link;
-					break;
-			}
-
-			$this->cache['STANDARD_URLS'][] = $link;
-
-			switch(true){
-				case ($this->attributes['SEO_URLS_USE_W3C_VALID'] == 'true' && !$page_cache):
-					return htmlspecialchars(utf8_encode($return));
-					break;
-				default:
-					return $return;
-					break;
-			}# end swtich
-		} # end default tep_href function
-
-		function add_sid($link, $add_session_id, $connection, $separator) {
-			global $request_type, $http_domain, $https_domain;
-
-			if ( ($add_session_id == true) && ($this->attributes['SESSION_STARTED']) && (SESSION_FORCE_COOKIE_USE == 'False') ) {
-				if ($this->not_null($this->attributes['SID'])) {
-					$_sid = $this->attributes['SID'];
-				} elseif ( ( ($request_type == 'NONSSL') && ($connection == 'SSL') && (ENABLE_SSL == 'true') ) || ( ($request_type == 'SSL') && ($connection == 'NONSSL') ) ) {
-					if ($http_domain != $https_domain) {
-						$_sid = session_name() . '=' . session_id();
-					}
-				}
-			}
-
-			switch(true){
-				case (!isset($_SESSION['customer_id']) && defined('ENABLE_PAGE_CACHE') && ENABLE_PAGE_CACHE == 'true' && class_exists('page_cache')):
-					$return = $link . $separator . '<zensid>';
-					break;
-				case ($this->not_null($_sid)):
-					$return = $link . $separator . $_sid;
-					break;
-				default:
-					$return = $link;
-					break;
-			} # end switch
-			return $return;
-		} # end function
-
-/**
- * Function to parse the parameters into an SEO URL
- * @author Bobby Easland
- * @version 1.2
- * @param string $page
- * @param string $params
- * @param string $separator NOTE: passed by reference
- * @return string
- */
+	/**
+	 * Parses the paramaters for a page to generate a valid url for the page.
+	 *
+	 * @param string $page the name of the page
+	 * @param string $params any paramaters for the page
+	 * @param string $separator the separator to use between the link and this paramater (if needed)
+	 * @return Ambigous <string, unknown>
+	 */
 	function parse_parameters($page, $params, &$separator) {
 		$p = @explode('&', $params);
-		krsort($p);
+		sort($p); // We need cPath to always appear before id's
+
 		$container = array();
 		foreach ($p as $index => $valuepair){
 			$p2 = @explode('=', $valuepair);
 			switch ($p2[0]){
 
-				case 'article_id':
-					switch(true) {
-						case ($page == FILENAME_NEWS_ARTICLE):
-							$url = $this->make_url($page, 'news/' . $this->get_news_article_name($p2[1]), 'news_article_id', $p2[1], '.html', $separator);
-							break;
-						case ($page == FILENAME_NEWS_COMMENTS):
-							$url = $this->make_url($page, 'news/' . $this->get_news_article_name($p2[1]), 'news_comments_article_id', $p2[1], '-comments.html', $separator);
-							break;
-						default:
-							$container[$p2[0]] = $p2[1];
-							break;
-					}
-					break;
-
-				case 'date':
-					switch(true) {
-						case ($page == FILENAME_NEWS_ARCHIVE):
-							$url = $this->make_url($page, FILENAME_NEWS_INDEX, 'news_archive_dates', $p2[1], '.html', $separator);
-							break;
-						case ($page == FILENAME_NEWS_INDEX):
-							$url = $this->make_url($page, FILENAME_NEWS_INDEX, 'news_dates', $p2[1], '.html', $separator);
-							break;
-						default:
-							$container[$p2[0]] = $p2[1];
-							break;
-					}
-					break;
-
-				case 'pages_id':
-					switch(true) {
-						case ($page == FILENAME_INFO_MANAGER):
-							$url = $this->make_url($page, $this->get_info_manager_page_name($p2[1]), 'info_manager_page_id', $p2[1], '.html', $separator);
-							break;
-						default:
-							$container[$p2[0]] = $p2[1];
-							break;
-					}
-					break;
-
 				case 'products_id':
+					// Make sure if uprid is passed it is converted to the correct pid
+					$p2[1] = zen_get_prid($p2[1]);
+
+					// If a cPath was present we need to determine the immediate parent cid
+					$cID = null;
+					if(array_key_exists('cPath', $container)) {
+						$cID = strrpos($container['cPath'], '_');
+						if($cID !== false)
+						{
+							$cID = substr($container['cPath'], $cID+1);
+						}
+						else {
+							$cID = $container['cPath'];
+						}
+
+						if(SEO_URL_CATEGORY_DIR != 'off' || SEO_URL_CPATH != 'auto') {
+							unset($container['cPath']);
+						}
+					}
+
 					switch(true) {
 						case ($page == FILENAME_PRODUCT_REVIEWS):
-							$url = $this->make_url($page, $this->get_product_name($p2[1]), 'products_id_review', $p2[1], '.html', $separator);
+							$url = $this->make_url($page, $this->get_product_name($p2[1], $cID), 'products_id_review', $p2[1], SEO_URL_END, $separator);
 							break;
 						case ($page == FILENAME_PRODUCT_REVIEWS_INFO):
-							$url = $this->make_url($page, $this->get_product_name($p2[1]), 'products_id_review_info', $p2[1], '.html', $separator);
+							$url = $this->make_url($page, $this->get_product_name($p2[1], $cID), 'products_id_review_info', $p2[1], SEO_URL_END, $separator);
 							break;
-//						case ($page == FILENAME_PRODUCT_INFO && !$this->is_attribute_string($params)):
+						case ($page == FILENAME_DEFAULT):
+							$container[$p2[0]] = $p2[1];
+							break;
 						case ($page == FILENAME_PRODUCT_INFO):
-						case ($page == 'product_free_shipping_info'):
-						case ($page == 'product_music_info'):
-						case ($page == 'document_product_info'):
-						case ($page == 'document_general_info'):									default:
-							$url = $this->make_url($page, $this->get_product_name($p2[1]), $p2[0], $p2[1], '.html', $separator);
+						default:
+							$url = $this->make_url($page, $this->get_product_name($p2[1], $cID), $p2[0], $p2[1], SEO_URL_END, $separator);
 							break;
 					} # end switch
 					break;
+
 				case 'cPath':
 					switch(true){
 						case ($page == FILENAME_DEFAULT):
-							/* START SEO-ADD-PRODUCT-CAT PATCH
-							 *
-							 * Patched to use SEO_ADD_PRODUCT_CAT
-							 * This allows the use of a directory structure for urls.
-							 * @author Andrew Ballanger
-							 */
-							if($this->attributes['SEO_ADD_PRODUCT_CAT'] == 'true')
+							// Change $p2[1] to the actual category id
+							$tmp = strrpos($p2[1], '_');
+							if($tmp !== false)
 							{
-								// Retrieve the actual category id
-								$tmp = strrpos($p2[1], '_');
-								if($tmp !== false)
-								{
-									$p2[1] = substr($p2[1], $tmp+1);
-								}
-								$path = array();
-								$this->get_parent_categories_path($path, $p2[1]);
-								$url = $this->make_url($page, implode('/', $path), $p2[0], $p2[1], '/', $separator);
+								$p2[1] = substr($p2[1], $tmp+1);
 							}
-							else
-							{
-							// END SEO-ADD-PRODUCT-CAT PATCH
-								$url = $this->make_url($page, $this->get_category_name($p2[1]), $p2[0], $p2[1], '.html', $separator);
-							// START SEO-ADD-PRODUCT-CAT PATCH
+
+							$category = $this->get_category_name($p2[1]);
+							if(SEO_URL_CATEGORY_DIR == 'off') {
+								$url = $this->make_url($page, $category, $p2[0], $p2[1], SEO_URL_END, $separator);
 							}
-							// END SEO-ADD-PRODUCT-CAT PATCH
+							else {
+								$url = $this->make_url($page, $category, $p2[0], $p2[1], '/', $separator);
+							}
+							unset($category);
 							break;
-						case ($this->is_product_string($params)):
-							if ($this->attributes['SEO_ADD_CPATH_TO_PRODUCT_URLS'] == 'true') {
-								$container[$p2[0]] = $p2[1];
-							}
-							break;
+
 						default:
 							$container[$p2[0]] = $p2[1];
 							break;
 						} # end switch
 					break;
+
 				case 'manufacturers_id':
 					switch(true){
 						case ($page == FILENAME_DEFAULT && !$this->is_cPath_string($params) && !$this->is_product_string($params)):
-							$url = $this->make_url($page, $this->get_manufacturer_name($p2[1]), $p2[0], $p2[1], '.html', $separator);
+							$url = $this->make_url($page, $this->get_manufacturer_name($p2[1]), $p2[0], $p2[1], SEO_URL_END, $separator);
 							break;
 						case ($page == FILENAME_PRODUCT_INFO):
 							break;
@@ -489,234 +316,282 @@
 							break;
 						} # end switch
 					break;
+
 				case 'pID':
 					switch(true){
 						case ($page == FILENAME_POPUP_IMAGE):
-						$url = $this->make_url($page, $this->get_product_name($p2[1]), $p2[0], $p2[1], '.html', $separator);
+						$url = $this->make_url($page, $this->get_product_name($p2[1]), $p2[0], $p2[1], SEO_URL_END, $separator);
 						break;
 					default:
 						$container[$p2[0]] = $p2[1];
 						break;
 					} # end switch
 					break;
+
 				case 'id':	// EZ-Pages
 					switch(true){
 						case ($page == FILENAME_EZPAGES):
-							$url = $this->make_url($page, $this->get_ezpages_name($p2[1]), $p2[0], $p2[1], '.html', $separator);
+							$url = $this->make_url($page, $this->get_ezpages_name($p2[1]), $p2[0], $p2[1], SEO_URL_END, $separator);
 							break;
 						default:
 							$container[$p2[0]] = $p2[1];
 							break;
 						} # end switch
 					break;
+
 				default:
 					$container[$p2[0]] = $p2[1];
 					break;
 			} # end switch
 		} # end foreach $p
-		$url = isset($url) ? $url : $page;
-		if ( sizeof($container) > 0 ) {
-			if ( $imploded_params = $this->implode_assoc($container) ) {
-				$url .= $separator . $this->output_string( $imploded_params );
+		$url = isset($url) ? $url : $page . SEO_URL_END;
+		if(sizeof($container) > 0) {
+			if($imploded_params = $this->implode_assoc($container)) {
+				$url .= $separator . zen_output_string($imploded_params);
 				$separator = '&';
 			}
 		}
+
 		return $url;
-	} # end function
-
-/**
- * Function to return the generated SEO URL
- * @author Bobby Easland
- * @version 1.0
- * @param string $page
- * @param string $string Stripped, formed anchor
- * @param string $anchor_type Parameter type (products_id, cPath, etc.)
- * @param integer $id
- * @param string $extension Default = .html
- * @param string $separator NOTE: passed by reference
- * @return string
- */
-	function make_url($page, $string, $anchor_type, $id, $extension = '.html', &$separator){
-		// Right now there is but one rewrite method since cName was dropped
-		// In the future there will be additional methods here in the switch
-		switch ( $this->attributes['SEO_REWRITE_TYPE'] ){
-			case 'Rewrite':
-				// START SEO-ADD-PRODUCT-CAT PATCH
-				if($anchor_type == 'cPath' && $this->attributes['SEO_ADD_PRODUCT_CAT'] == 'true')
-				{
-					return $string . $extension;
-				}
-				// END SEO-ADD-PRODUCT-CAT PATCH
-				return $string . $this->reg_anchors[$anchor_type] . $id . $extension;
-				break;
-			default:
-				break;
-		} # end switch
-	} # end function
-
-	function get_info_manager_page_name($pages_id) {
-		switch(true){
-			case ($this->attributes['USE_SEO_CACHE_GLOBAL'] == 'true' && defined('INFO_MANAGER_PAGE_NAME_' . $pages_id)):
-				$return = constant('INFO_MANAGER_PAGE_NAME_' . $pages_id);
-				$this->cache['INFO_MANAGER_PAGES'][$pages_id] = $return;
-				break;
-
-			case ($this->attributes['USE_SEO_CACHE_GLOBAL'] == 'true' && isset($this->cache['INFO_MANAGER_PAGES'][$pages_id])):
-				$return = $this->cache['INFO_MANAGER_PAGES'][$pages_id];
-				break;
-
-			default:
-				$sql = "SELECT pages_title
-						FROM " . TABLE_INFO_MANAGER . "
-						WHERE pages_id = " . (int)$pages_id . "
-						LIMIT 1";
-				$result = $this->db->Execute($sql, false, true, 43200);
-				$pages_title = $this->strip($result->fields['pages_title']);
-				$this->cache['INFO_MANAGER_PAGES'][$pages_id] = $pages_title;
-				$return = $pages_title;
-				break;
-		}
-		return $return;
 	}
 
-	function get_news_article_name($article_id) {
-		switch(true){
-			case ($this->attributes['USE_SEO_CACHE_GLOBAL'] == 'true' && defined('NEWS_ARTICLE_NAME_' . $article_id)):
-				$return = constant('NEWS_ARTICLE_NAME_' . $article_id);
-				$this->cache['NEWS_ARTICLES'][$article_id] = $return;
+	/**
+	 * Generates the url for the given page and paramaters.
+	 *
+	 * @param string $page the page for the link
+	 * @param string $link the name to use for the url
+	 * @param string $anchor_type the last paramater parsed type (products_id, cPath, etc.)
+	 * @param string $id the last paramater parsed id (or cPath)
+	 * @param string $extension Default =
+	 * @param string $separator NOTE: passed by reference
+	 * @return string the final generated url
+	 */
+	function make_url($page, $link, $anchor_type, $id, $extension = SEO_URL_END, &$separator){
+		// In the future there may be additional methods here in the switch
+		switch (SEO_REWRITE_TYPE){
+			case 'rewrite':
+				return $link . $this->reg_anchors[$anchor_type] . $id . $extension;
 				break;
-
-			case ($this->attributes['USE_SEO_CACHE_GLOBAL'] == 'true' && isset($this->cache['NEWS_ARTICLES'][$article_id])):
-				$return = $this->cache['NEWS_ARTICLES'][$article_id];
-				break;
-
 			default:
-				$sql = "SELECT news_article_name
-						FROM " . TABLE_NEWS_ARTICLES_TEXT . "
-						WHERE article_id = " . (int)$article_id . "
-						AND language_id = " . (int)$this->languages_id . "
-						LIMIT 1";
-				$result = $this->db->Execute($sql, false, true, 43200);
-				$news_article_name = $this->strip($result->fields['news_article_name']);
-				$this->cache['NEWS_ARTICLES'][$article_id] = $news_article_name;
-				$return = $news_article_name;
 				break;
 		}
-		return $return;
 	}
 
-/**
- * Function to get the product name. Use evaluated cache, per page cache, or database query in that order of precedent
- * @author Bobby Easland
- * @version 1.1
- * @param integer $pID
- * @return string Stripped anchor text
- */
-	function get_product_name($pID){
-		switch(true){
-			case ($this->attributes['USE_SEO_CACHE_GLOBAL'] == 'true' && defined('PRODUCT_NAME_' . $pID)):
+	/**
+	 * Function to get the product name. Use evaluated cache, per page cache,
+	 * or database query in that order of precedent.
+	 *
+	 * @param integer $pID
+	 * @return string product name
+	 */
+	function get_product_name($pID, $cID = null) {
+		global $db;
+
+		// Handle generating the product name
+		switch(true) {
+			case (SEO_USE_CACHE_GLOBAL == 'true' && defined('PRODUCT_NAME_' . $pID)):
 				$return = constant('PRODUCT_NAME_' . $pID);
 				$this->cache['PRODUCTS'][$pID] = $return;
 				break;
 
-			case ($this->attributes['USE_SEO_CACHE_GLOBAL'] == 'true' && isset($this->cache['PRODUCTS'][$pID])):
+			case (SEO_USE_CACHE_GLOBAL == 'true' && isset($this->cache['PRODUCTS'][$pID])):
 				$return = $this->cache['PRODUCTS'][$pID];
 				break;
 
 			default:
-				/* START SEO-ADD-PRODUCT-CAT PATCH
-				 *
-				 * Patched to use SEO_ADD_PRODUCT_CAT
-				 * This allows the use of a directory structure for urls.
-				 * @author Andrew Ballanger
-				 */
-				if($this->attributes['SEO_ADD_PRODUCT_CAT'] == 'true')
-				{
-					$sql = 'SELECT pd.products_name AS pName, ptc.categories_id AS c_id ' .
-						'FROM ' . TABLE_PRODUCTS_DESCRIPTION . ' AS pd ' .
-						'LEFT JOIN ' . TABLE_PRODUCTS . ' AS p ' .
+				if(SEO_URL_FORMAT == 'parent') {
+					$sql = 'SELECT pd.products_name AS pName, ptc.categories_id AS c_id, p.master_categories_id AS master_id ' .
+						'FROM `' . TABLE_PRODUCTS_DESCRIPTION . '` AS pd ' .
+						'LEFT JOIN `' . TABLE_PRODUCTS . '` AS p ' .
 						'ON pd.products_id=p.products_id ' .
-						'LEFT JOIN ' . TABLE_PRODUCTS_TO_CATEGORIES . ' AS ptc ' .
+						'LEFT JOIN `' . TABLE_PRODUCTS_TO_CATEGORIES . '` AS ptc ' .
 						'ON pd.products_id=ptc.products_id ' .
 						'WHERE pd.products_id=\'' . (int)$pID . '\' ' .
+						($cID !== null ? 'AND ptc.categories_id = \'' . (int)$cID . '\'' : '' ) .
 						'AND language_id=\'' . (int)$this->languages_id . '\' LIMIT 1';
 				}
-				else
-				{
-				// END SEO-ADD-PRODUCT-CAT PATCH
+				else {
 					$sql = 'SELECT pd.products_name as pName ' .
 						'FROM ' . TABLE_PRODUCTS_DESCRIPTION . ' pd ' .
 						'WHERE products_id=\'' . (int)$pID . '\' ' .
 						'AND language_id=\'' . (int)$this->languages_id . '\' LIMIT 1';
-				// START SEO-ADD-PRODUCT-CAT PATCH
 				}
-				// END SEO-ADD-PRODUCT-CAT PATCH
-				$result = $this->db->Execute($sql, false, true, 43200);
-				$pName = $this->strip($result->fields['pName']);
-				// START SEO-ADD-PRODUCT-CAT PATCH
-				if($this->attributes['SEO_ADD_PRODUCT_CAT'] == 'true')
-				{
-					$path = array();
-					$this->get_parent_categories_path($path, $result->fields['c_id']);
-					$pName = implode('/', $path) . '/' . $pName;
-				}
-				// END SEO-ADD-PRODUCT-CAT PATCH
-				$this->cache['PRODUCTS'][$pID] = $pName;
-				$return = $pName;
-				break;
-		} # end switch
-		return $return;
-	} # end function
+				$result = $db->Execute($sql, false, true, 43200);
+				$pName = $this->filter($result->fields['pName']);
 
-/**
- * Function to get the category name. Use evaluated cache, per page cache, or database query in that order of precedent
- * @author Bobby Easland
- * @version 1.1
- * @param integer $cID NOTE: passed by reference
- * @return string Stripped anchor text
- */
-	function get_category_name(&$cID){
+				if(SEO_URL_FORMAT == 'parent' && SEO_URL_CATEGORY_DIR == 'off') {
+					$pName = $this->get_category_name($cID !== null ? $cID : (int)$result->fields['master_id'], 'original') . '-' . $pName;
+				}
+
+				$this->cache['PRODUCTS'][$pID] = $pName;
+				$return = $this->cache['PRODUCTS'][$pID];
+				break;
+		}
+
+		// Add the category
+		if(SEO_URL_CATEGORY_DIR != 'off') {
+			$sql = 'SELECT ptc.categories_id AS c_id, p.master_categories_id AS master_id ' .
+				'FROM `' . TABLE_PRODUCTS . '` AS p ' .
+				'LEFT JOIN `' . TABLE_PRODUCTS_TO_CATEGORIES . '` AS ptc ' .
+				'ON p.products_id=ptc.products_id ' .
+				'WHERE p.products_id=\'' . (int)$pID . '\' ' .
+				($cID !== null ? 'AND ptc.categories_id = \'' . (int)$cID . '\'' : '' ) .
+				'LIMIT 1';
+
+			$result = $db->Execute($sql, false, true, 43200);
+			$category = '';
+			$canonical = null;
+			if(!$result->EOF) {
+				$cID = ($cID !== null ? $cID : (int)$result->fields['master_id']);
+				$category = $this->get_category_name($cID) .
+					$this->reg_anchors['cPath'] . $cID . '/';
+			}
+
+			$return = $category . $return;
+		}
+
+		return $return;
+	}
+
+	/**
+	 * Function to get the product canonical. Use evaluated cache, per page cache,
+	 * or database query in that order of precedent.
+	 *
+	 * @param integer $pID
+	 * @return string product canonical
+	 */
+	function get_product_canonical($pID) {
+		global $db;
+
+		$retval = null;
+		// Only need to add the canonicals if different paths exist
+		if(SEO_URL_CATEGORY_DIR != 'off') {
+			$sql = 'SELECT ptc.categories_id AS c_id, p.master_categories_id AS master_id ' .
+				'FROM `' . TABLE_PRODUCTS . '` AS p ' .
+				'LEFT JOIN `' . TABLE_PRODUCTS_TO_CATEGORIES . '` AS ptc ' .
+				'ON p.products_id=ptc.products_id ' .
+				'WHERE p.products_id=\'' . (int)$pID . '\' LIMIT 1';
+
+			$result = $db->Execute($sql, false, true, 43200);
+			if(!$result->EOF) {
+				$cID = (int)$result->fields['c_id'];
+				$masterID = (int)$result->fields['master_id'];
+
+				// Master category and product category do not match. This
+				// product will need a canonical.
+				if($cID != $masterID) {
+					$retval = $this->get_category_name($masterID) .
+					$this->reg_anchors['cPath'] . $masterID . '/';
+
+					// Get the product name
+					switch(true) {
+						case (SEO_USE_CACHE_GLOBAL == 'true' && defined('PRODUCT_NAME_' . $pID)):
+							$retval .= constant('PRODUCT_NAME_' . $pID);
+							break;
+
+						case (SEO_USE_CACHE_GLOBAL == 'true' && isset($this->cache['PRODUCTS'][$pID])):
+							$retval .= $this->cache['PRODUCTS'][$pID];
+							break;
+
+						default:
+							if(SEO_URL_FORMAT == 'parent') {
+								$sql = 'SELECT pd.products_name AS pName, ptc.categories_id AS c_id, p.master_categories_id AS master_id ' .
+									'FROM `' . TABLE_PRODUCTS_DESCRIPTION . '` AS pd ' .
+									'LEFT JOIN `' . TABLE_PRODUCTS . '` AS p ' .
+									'ON pd.products_id=p.products_id ' .
+									'LEFT JOIN `' . TABLE_PRODUCTS_TO_CATEGORIES . '` AS ptc ' .
+									'ON pd.products_id=ptc.products_id ' .
+									'WHERE pd.products_id=\'' . (int)$pID . '\' ' .
+									'AND language_id=\'' . (int)$this->languages_id . '\' LIMIT 1';
+							}
+							else {
+								$sql = 'SELECT pd.products_name as pName ' .
+									'FROM ' . TABLE_PRODUCTS_DESCRIPTION . ' pd ' .
+									'WHERE products_id=\'' . (int)$pID . '\' ' .
+									'AND language_id=\'' . (int)$this->languages_id . '\' LIMIT 1';
+							}
+							$result = $db->Execute($sql, false, true, 43200);
+							$pName = $this->filter($result->fields['pName']);
+
+							if(SEO_URL_FORMAT == 'parent' && SEO_URL_CATEGORY_DIR == 'off') {
+								$cID = (int)$result->fields['c_id'];
+								$pName = $this->get_category_name($cID, 'original') . '-' . $pName;
+							}
+
+							$retval .= $pName;
+							unset($pname);
+							break;
+					}
+				}
+			}
+			unset($sql, $result);
+		}
+
+		return $retval;
+	}
+
+	/**
+	 * Function to get the category name. Use evaluated cache, per page cache,
+	 * or database query in that order of precedent
+	 * @param integer $cID NOTE: passed by reference
+	 * @return string category name
+	 */
+	function get_category_name(&$cID, $format = SEO_URL_FORMAT){
+		global $db;
+
 		$full_cPath = $this->get_full_cPath($cID, $single_cID); // full cPath needed for uniformity
 		switch(true){
-			case ($this->attributes['USE_SEO_CACHE_GLOBAL'] == 'true' && defined('CATEGORY_NAME_' . $full_cPath)):
+			case (SEO_USE_CACHE_GLOBAL == 'true' && defined('CATEGORY_NAME_' . $full_cPath) && $format == SEO_URL_FORMAT):
 				$return = constant('CATEGORY_NAME_' . $full_cPath);
 				$this->cache['CATEGORIES'][$full_cPath] = $return;
 				break;
-			case ($this->attributes['USE_SEO_CACHE_GLOBAL'] == 'true' && isset($this->cache['CATEGORIES'][$full_cPath])):
+			case (SEO_USE_CACHE_GLOBAL == 'true' && isset($this->cache['CATEGORIES'][$full_cPath]) && $format == SEO_URL_FORMAT):
 				$return = $this->cache['CATEGORIES'][$full_cPath];
 				break;
 			default:
-				switch(true){
-					case ($this->attributes['SEO_ADD_CAT_PARENT'] == 'true'):
-						$sql = "SELECT c.categories_id, c.parent_id, cd.categories_name as cName, cd2.categories_name as pName
-								FROM ".TABLE_CATEGORIES_DESCRIPTION." cd, ".TABLE_CATEGORIES." c
-								LEFT JOIN ".TABLE_CATEGORIES_DESCRIPTION." cd2
-								ON c.parent_id=cd2.categories_id AND cd2.language_id='".(int)$this->languages_id."'
-								WHERE c.categories_id='".(int)$single_cID."'
-								AND cd.categories_id='".(int)$single_cID."'
-								AND cd.language_id='".(int)$this->languages_id."'
-								LIMIT 1";
-						$result = $this->db->Execute($sql, false, true, 43200);
-						$cName = $this->not_null($result->fields['pName']) ? $result->fields['pName'] . ' ' . $result->fields['cName'] : $result->fields['cName'];
-						break;
-					default:
-						$sql = "SELECT categories_name as cName
-								FROM ".TABLE_CATEGORIES_DESCRIPTION."
-								WHERE categories_id='".(int)$single_cID."'
-								AND language_id='".(int)$this->languages_id."'
-								LIMIT 1";
-						$result = $this->db->Execute($sql, false, true, 43200);
-						$cName = $result->fields['cName'];
-						break;
+				$cName = '';
+				if(SEO_URL_CATEGORY_DIR == 'full') {
+					$path = array();
+					$this->get_parent_categories_path($path, $single_cID);
+					if(sizeof($path) > 0) {
+						$cName = implode('/', $path);
+						$cut = strrpos($cName, $this->reg_anchors['cPath']);
+						if($cut !== false) $cName = substr($cName, 0, $cut);
+						unset($cut);
+					}
+					unset($path);
 				}
-				$cName = $this->strip($cName);
+				else if($format == 'parent') {
+					$sql = 'SELECT `c`.`categories_id`, `c`.`parent_id`, `cd`.`categories_name` AS `cName`, `cd2`.`categories_name` AS `pName` ' .
+						'FROM `' . TABLE_CATEGORIES_DESCRIPTION . '` AS `cd`, `' . TABLE_CATEGORIES . '` AS `c` ' .
+						'LEFT JOIN `' . TABLE_CATEGORIES_DESCRIPTION . '` AS `cd2` ' .
+						'ON `c`.`parent_id`=`cd2`.`categories_id` AND `cd2`.`language_id`=\'' . (int)$this->languages_id . '\' ' .
+						'WHERE `c`.`categories_id`=\'' . (int)$single_cID . '\' ' .
+						'AND `cd`.`categories_id`=\'' . (int)$single_cID . '\' ' .
+						'AND `cd`.`language_id`=\'' . (int)$this->languages_id . '\' ' .
+						'LIMIT 1';
+					$result = $db->Execute($sql, false, true, 43200);
+					if(!$result->EOF) {
+						$cName = zen_not_null($result->fields['pName']) ? $this->filter($result->fields['pName'] . ' ' . $result->fields['cName']) : $this->filter($result->fields['cName']);
+					}
+				}
+				else {
+					$sql = 'SELECT `categories_name` AS `cName` ' .
+						'FROM `' . TABLE_CATEGORIES_DESCRIPTION . '` ' .
+						'WHERE `categories_id`=\'' . (int)$single_cID . '\' ' .
+						'AND `language_id`=\'' . (int)$this->languages_id . '\' ' .
+						'LIMIT 1';
+					$result = $db->Execute($sql, false, true, 43200);
+					if(!$result->EOF) $cName = $this->filter($result->fields['cName']);
+				}
+
 				$this->cache['CATEGORIES'][$full_cPath] = $cName;
 				$return = $cName;
 				break;
-		} # end switch
+		}
 		$cID = $full_cPath;
 		return $return;
-	} # end function
+	}
 
 /**
  * Function to get the manufacturer name. Use evaluated cache, per page cache, or database query in that order of precedent.
@@ -725,13 +600,15 @@
  * @param integer $mID
  * @return string
  */
-	function get_manufacturer_name($mID){
+	function get_manufacturer_name($mID) {
+		global $db;
+
 		switch(true){
-			case ($this->attributes['USE_SEO_CACHE_GLOBAL'] == 'true' && defined('MANUFACTURER_NAME_' . $mID)):
+			case (SEO_USE_CACHE_GLOBAL == 'true' && defined('MANUFACTURER_NAME_' . $mID)):
 				$return = constant('MANUFACTURER_NAME_' . $mID);
 				$this->cache['MANUFACTURERS'][$mID] = $return;
 				break;
-			case ($this->attributes['USE_SEO_CACHE_GLOBAL'] == 'true' && isset($this->cache['MANUFACTURERS'][$mID])):
+			case (SEO_USE_CACHE_GLOBAL == 'true' && isset($this->cache['MANUFACTURERS'][$mID])):
 				$return = $this->cache['MANUFACTURERS'][$mID];
 				break;
 			default:
@@ -739,8 +616,8 @@
 						FROM ".TABLE_MANUFACTURERS."
 						WHERE manufacturers_id='".(int)$mID."'
 						LIMIT 1";
-				$result = $this->db->Execute($sql, false, true, 43200);
-				$mName = $this->strip($result->fields['mName']);
+				$result = $db->Execute($sql, false, true, 43200);
+				$mName = $this->filter($result->fields['mName']);
 				$this->cache['MANUFACTURERS'][$mID] = $mName;
 				$return = $mName;
 				break;
@@ -755,32 +632,34 @@
  * @param integer $mID
  * @return string
  */
-	function get_ezpages_name($ezpID){
+	function get_ezpages_name($ezpID) {
+		global $db;
+
 		switch(true){
-			case ($this->attributes['USE_SEO_CACHE_GLOBAL'] == 'true' && defined('EZPAGES_NAME_' . $ezpID)):
+			case (SEO_USE_CACHE_GLOBAL == 'true' && defined('EZPAGES_NAME_' . $ezpID)):
 				$return = constant('EZPAGES_NAME_' . $ezpID);
 				$this->cache['EZPAGES'][$ezpID] = $return;
 				break;
-			case ($this->attributes['USE_SEO_CACHE_GLOBAL'] == 'true' && isset($this->cache['EZPAGES'][$ezpID])):
+			case (SEO_USE_CACHE_GLOBAL == 'true' && isset($this->cache['EZPAGES'][$ezpID])):
 				$return = $this->cache['EZPAGES'][$ezpID];
 				break;
 			default:
-				// modified by zen-cart.cn
-				// $sql = "SELECT pages_title as ezpName
-				//    FROM ".TABLE_EZPAGES."
-				//		WHERE pages_id='".(int)$ezpID."'
-				//    LIMIT 1";
-				$sql = "SELECT et.pages_title as ezpName
-				from  " . TABLE_EZPAGES . " e, " . TABLE_EZPAGES_TEXT . " et 
-				where e.pages_id='" . (int)$ezpID . "' 
-            and e.pages_id = et.pages_id 
-            and et.languages_id = '" . (int)$_SESSION['languages_id'] . "' 
-            and status_sidebox = 1 
-            and sidebox_sort_order > 0
-            LIMIT 1";
-
-				$result = $this->db->Execute($sql, false, true, 43200);
-				$ezpName = $this->strip($result->fields['ezpName']);
+				if(defined('TABLE_EZPAGES_TEXT')) {
+					$sql = 'SELECT et.pages_title AS ezpName ' .
+						'FROM `' . TABLE_EZPAGES . '` AS e, `' . TABLE_EZPAGES_TEXT . '` AS et ' .
+						'WHERE e.pages_id=\''.(int)$ezpID.'\' ' .
+						'AND e.pages_id = et.pages_id ' .
+						'AND et.languages_id = \'' . (int)$_SESSION['languages_id'] . '\' ' .
+						'LIMIT 1';
+				}
+				else {
+					$sql = 'SELECT pages_title AS ezpName ' .
+						'FROM `' . TABLE_EZPAGES . '` ' .
+						'WHERE pages_id=\''.(int)$ezpID.'\' ' .
+						'LIMIT 1';
+				}
+				$result = $db->Execute($sql, false, true, 43200);
+				$ezpName = $this->filter($result->fields['ezpName']);
 				$this->cache['EZPAGES'][$ezpID] = $ezpName;
 				$return = $ezpName;
 				break;
@@ -820,9 +699,11 @@
  * @param integer $categories_id
  */
 	function get_parent_categories_id(&$categories, $categories_id) {
+		global $db;
+
 		$sql = "SELECT parent_id FROM " . TABLE_CATEGORIES . " WHERE categories_id = " . (int)$categories_id;
 
-		$parent_categories = $this->db->Execute($sql);
+		$parent_categories = $db->Execute($sql);
 
 		while (!$parent_categories->EOF) {
 			if ($parent_categories->fields['parent_id'] == 0) return true;
@@ -837,7 +718,6 @@
 		}
 	}
 
-	// START SEO-ADD-PRODUCT-CAT PATCH
 	/**
 	 * Recursion function to retrieve parent categories from category ID.
 	 *
@@ -846,18 +726,19 @@
 	 * @param mixed $path Passed by reference
 	 * @param integer $categories_id
 	 */
-	function get_parent_categories_path(&$path, $categories_id, &$cPath = array())
-	{
+	function get_parent_categories_path(&$path, $categories_id, &$cPath = array()) {
+		global $db;
+
 		$sql = 'SELECT c.parent_id AS p_id, cd.categories_name AS name ' .
-			'FROM ' . TABLE_CATEGORIES . ' c ' .
-			'LEFT JOIN ' . TABLE_CATEGORIES_DESCRIPTION . ' cd ' .
+			'FROM `' . TABLE_CATEGORIES . '` AS c ' .
+			'LEFT JOIN `' . TABLE_CATEGORIES_DESCRIPTION . '` AS cd ' .
 			'ON c.categories_id=cd.categories_id ' .
 			'AND cd.language_id=\'' . (int)$this->languages_id . '\'' .
 			'WHERE c.categories_id=\'' . (int)$categories_id . '\'';
 
-		$parent = $this->db->Execute($sql, false, true, 43200);
+		$parent = $db->Execute($sql, false, true, 43200);
 
-		while (!$parent->EOF) {
+		if(!$parent->EOF) {
 
 			// Recurse if the parent id is not empty or equal the passed categories id
 			if ($parent->fields['p_id'] != 0 && $parent->fields['p_id'] != $categories_id) {
@@ -866,16 +747,9 @@
 
 			// Add category id to cPath and name to path
 			$cPath[sizeof($cPath)] = $categories_id;
-			$path[sizeof($path)] = $this->strip($parent->fields['name']) . '-c-' .
+			$path[sizeof($path)] = $this->filter($parent->fields['name']) . '-c-' .
 			(sizeof($cPath) > 1 ? implode('_', $cPath) : $categories_id);
-
-			$parent->MoveNext();
 		}
-	}
-	// END SEO-ADD-PRODUCT-CAT PATCH
-
-	function not_null($value) {
-		return zen_not_null($value);
 	}
 
 	function is_attribute_string($params){
@@ -903,52 +777,53 @@
 	}
 
 /**
- * Function to strip the string of punctuation and white space
- * @author Bobby Easland (original), Andrew Ballanger (PHP 5.x update)
- * @version 1.2
- * @param string $string
- * @return string Stripped text. Removes all non-alphanumeric characters.
+ * Function to filter a string and remove punctuation and white space.
+ *
+ * @param string $string input text
+ * @return string filtered text
  */
-	function strip($string){
-		// START SEO_URLS_FILTER_PCRE PATCH
+	function filter($string){
 		$retval = $string;
-		// First run PCRE filters over the string
-		if (is_array($this->attributes['SEO_URLS_FILTER_PCRE']))
+
+		// First filter using PCRE Rules
+		if(is_array($this->filter_pcre))
 		{
 			$retval = preg_replace(
-				array_keys($this->attributes['SEO_URLS_FILTER_PCRE']),
-				array_values($this->attributes['SEO_URLS_FILTER_PCRE']),
+				array_keys($this->filter_pcre),
+				array_values($this->filter_pcre),
 				$retval
 			);
 		}
-		// END SEO_URLS_FILTER_PCRE PATCH
 
 		// Next run Character Conversion Sets over the string
-		if (is_array($this->attributes['SEO_CHAR_CONVERT_SET'])) $retval = strtr($retval, $this->attributes['SEO_CHAR_CONVERT_SET']);
+		if(is_array($this->filter_char)) $retval = strtr($retval, $this->filter_char);
 
+		// Next run character filters over the string
 		$pattern = '';
 		// Remove Special Characters from the strings
-		if($this->attributes['SEO_REMOVE_ALL_SPEC_CHARS'])
-		{
-			// Remove all non alphanumeric characters
-			if(!self::$unicodeEnabled) {
-            	// POSIX named classes are not supported by preg_replace
-            	$pattern = '/[^a-zA-Z0-9\s]/';
-            } else {
-            	// Each language's alphabet.
-            	$pattern = '/[^\p{L}\p{N}\s]/u';
-            }
-		}
-		else
-		{
-			// Remove all punctuation
-			if(!self::$unicodeEnabled) {
-            	// POSIX named classes are not supported by preg_replace
-            	$pattern = '/[!"#$%&\'()*+,\-.\/:;<=>?@[\\\]^_`{|}~\s]/';
-            } else {
-            	// Each language's punctuation.
-            	$pattern = '/[\p{P}\p{S}\s]/u';
-            }
+		switch(SEO_URLS_REMOVE_CHARS) {
+			case 'non-alphanumerical':
+				// Remove all non alphanumeric characters
+				if(!self::$unicodeEnabled) {
+					// POSIX named classes are not supported by preg_replace
+					$pattern = '/[^a-zA-Z0-9\s]/';
+				} else {
+					// Each language's alphabet.
+					$pattern = '/[^\p{L}\p{N}\s]/u';
+				}
+				break;
+			case 'punctuation':
+				// Remove all punctuation
+				if(!self::$unicodeEnabled) {
+					// POSIX named classes are not supported by preg_replace
+					$pattern = '/[!"#$%&\'()*+,.\/:;<=>?@[\\\]^_`{|}~]/';
+				} else {
+					// Each language's punctuation.
+					$pattern = '/[\p{P}\p{S}]/u';
+				}
+
+				break;
+			default:
 		}
 
 		// modified by zen-cart.cn
@@ -956,6 +831,7 @@
 		$pattern = '/[\p{P}\p{S}]/u';
 		$retval = preg_replace($pattern, '', GBcase($retval,"lower"));
 
+		// Replace any remaining whitespace with a -
 		// $retval = preg_replace('/\s/', '-', $retval);
 		$retval = str_replace(" ","-",$retval);   // 替换英文空格 
 		$retval = str_replace(chr(32),"-",$retval);  // 替换中文空格
@@ -974,7 +850,7 @@
 	// START SEO_URLS_FILTER_PCRE PATCH
 	function expand($set, $pcre = false){
 	// END SEO_URLS_FILTER_PCRE PATCH
-		if ( $this->not_null($set) ){
+		if ( zen_not_null($set) ){
 			if ( $data = @explode(',', $set) ){
 				foreach ( $data as $index => $valuepair){
 					$p = @explode('=>', $valuepair);
@@ -1000,7 +876,7 @@
  * @return string Short word filtered
  */
 	function short_name($str, $limit=3){
-		if ( $this->attributes['SEO_URLS_FILTER_SHORT_WORDS'] != 'false' ) $limit = (int)$this->attributes['SEO_URLS_FILTER_SHORT_WORDS'];
+		if(defined('SEO_URLS_FILTER_SHORT_WORDS')) $limit = (int)SEO_URLS_FILTER_SHORT_WORDS;
 		$foo = @explode('-', $str);
 		foreach($foo as $index => $value){
 			switch (true){
@@ -1027,7 +903,7 @@
 	function implode_assoc($array, $inner_glue='=', $outer_glue='&') {
 		$output = array();
 		foreach( $array as $key => $item ){
-			if ( $this->not_null($key) && $this->not_null($item) ){
+			if ( zen_not_null($key) && zen_not_null($item) ){
 				$output[] = $key . $inner_glue . $item;
 			}
 		} # end foreach
@@ -1047,51 +923,33 @@
 	}
 
 /**
- * Function to output a translated or sanitized string
- * @author Bobby Easland
- * @version 1.0
- * @param string $sting String to be output
- * @param mixed $translate Array of translation characters
- * @param boolean $protected Switch for htemlspecialchars processing
- * @return string
- */
-	function output_string($string, $translate = false, $protected = false) {
-		if ($protected == true) {
-		  return htmlspecialchars($string);
-		} else {
-		  if ($translate == false) {
-			return $this->parse_input_field_data($string, array('"' => '&quot;'));
-		  } else {
-			return $this->parse_input_field_data($string, $translate);
-		  }
-		}
-	}
-
-/**
  * Function to generate EZ-Pages cache entries
- * @author Bobby Easland, Ronald Crawford
- * @version 1.0
  */
-	function generate_ezpages_cache(){
-		$this->is_cached($this->cache_file . 'ezpages', $is_cached, $is_expired);
-		if ( !$is_cached || $is_expired ) {
-				// modified by zen-cart.cn
-				$sql = "SELECT e.pages_id as id, et.pages_title as name
-				FROM  " . TABLE_EZPAGES . " e, " . TABLE_EZPAGES_TEXT . " et 
-				WHERE e.pages_id = et.pages_id 
-            and et.languages_id = '" . (int)$this->languages_id . "' 
-            and status_sidebox = 1 and sidebox_sort_order > 0";
+	function generate_ezpages_cache() {
+		global $db;
 
-		$ezpages = $this->db->Execute($sql, false, true, 43200);
-		$ezpages_cache = '';
-		while (!$ezpages->EOF) {
-			$define = 'define(\'EZPAGES_NAME_' . $ezpages->fields['id'] . '\', \'' . $this->strip($ezpages->fields['name']) . '\');';
-			$ezpages_cache .= $define . "\n";
-			eval("$define");
-			$product->MoveNext();
-		}
-		$this->save_cache($this->cache_file . 'ezpages', $ezpages_cache, 'EVAL', 1 , 1);
-		unset($ezpages_cache);
+		$this->is_cached($this->cache_file . 'ezpages', $is_cached, $is_expired);
+		if (!$is_cached || $is_expired) {
+			if(defined('TABLE_EZPAGES_TEXT')) {
+				$sql = 'SELECT e.pages_id AS id, et.pages_title AS name ' .
+					'FROM `' . TABLE_EZPAGES . '` AS e, `' . TABLE_EZPAGES_TEXT . '` AS et ' .
+					'WHERE e.pages_id = et.pages_id ' .
+					'AND et.languages_id = \'' . (int)$_SESSION['languages_id'] . '\'';
+			}
+			else {
+				$sql = 'SELECT pages_id AS id, pages_title AS name ' .
+					'FROM `' . TABLE_EZPAGES . '` ';
+			}
+			$ezpages = $db->Execute($sql, false, true, 43200);
+			$ezpages_cache = '';
+			while (!$ezpages->EOF) {
+				$define = 'define(\'EZPAGES_NAME_' . $ezpages->fields['id'] . '\', \'' . $this->filter($ezpages->fields['name']) . '\');';
+				$ezpages_cache .= $define . "\n";
+				eval("$define");
+				$ezpages->MoveNext();
+			}
+			$this->save_cache($this->cache_file . 'ezpages', $ezpages_cache, 'EVAL', 1 , 1);
+			unset($ezpages_cache);
 		} else {
 			$this->get_cache($this->cache_file . 'ezpages');
 		}
@@ -1099,46 +957,49 @@
 
 /**
  * Function to generate products cache entries
- * @author Bobby Easland
- * @version 1.0
  */
-	function generate_products_cache(){
+	function generate_products_cache() {
+		global $db;
+
 		$this->is_cached($this->cache_file . 'products', $is_cached, $is_expired);
-		if ( !$is_cached || $is_expired ) {
-			/* START SEO-ADD-PRODUCT-CAT PATCH
-			 *
-			 * Patched to use SEO_ADD_PRODUCT_CAT
-			 * This allows the use of a directory structure for urls.
-			 * @author Andrew Ballanger
-			 */
-			$sql = 'SELECT p.products_id as id, ptc.categories_id as c_id, pd.products_name as name ' .
-		       	'FROM ' . TABLE_PRODUCTS  . ' AS p ' .
-				'LEFT JOIN ' . TABLE_PRODUCTS_DESCRIPTION . ' AS pd ' .
-				'ON p.products_id=pd.products_id ' .
-				'LEFT JOIN ' . TABLE_PRODUCTS_TO_CATEGORIES . ' AS ptc ' .
-				'ON p.products_id=ptc.products_id ' .
-				'WHERE p.products_status=\'1\' ' .
-				'AND pd.language_id=\'' . (int)$this->languages_id . '\'';
-			// END SEO-ADD-PRODUCT-CAT PATCH
-			$product = $this->db->Execute($sql, false, true, 43200);
+		if(!$is_cached || $is_expired) {
+			if(SEO_URL_FORMAT == 'parent') {
+				$sql = 'SELECT p.products_id as id, ptc.categories_id as c_id, p.master_categories_id AS master_id, pd.products_name as name ' .
+					'FROM ' . TABLE_PRODUCTS  . ' AS p ' .
+					'LEFT JOIN ' . TABLE_PRODUCTS_DESCRIPTION . ' AS pd ' .
+					'ON p.products_id=pd.products_id ' .
+					'LEFT JOIN ' . TABLE_PRODUCTS_TO_CATEGORIES . ' AS ptc ' .
+					'ON p.products_id=ptc.products_id ' .
+					'WHERE p.products_status=\'1\' ' .
+					'AND pd.language_id=\'' . (int)$this->languages_id . '\'';
+			}
+			else {
+				$sql = 'SELECT p.products_id as id, pd.products_name as name ' .
+					'FROM ' . TABLE_PRODUCTS  . ' AS p ' .
+					'LEFT JOIN ' . TABLE_PRODUCTS_DESCRIPTION . ' AS pd ' .
+					'ON p.products_id=pd.products_id ' .
+					'WHERE p.products_status=\'1\' ' .
+					'AND pd.language_id=\'' . (int)$this->languages_id . '\'';
+			}
+
+			$product = $db->Execute($sql, false, true, 43200);
 			$prod_cache = '';
 			while (!$product->EOF) {
-				// START SEO-ADD-PRODUCT-CAT PATCH
-				$define = 'define(\'PRODUCT_NAME_' . $product->fields['id'] . '\', \'';
-				if($this->attributes['SEO_ADD_PRODUCT_CAT'] == 'true')
-				{
-					$path = array();
-					$this->get_parent_categories_path($path, $product->fields['c_id']);
-					$define .= implode('/', $path) . '/';
+				$pName = $this->filter($product->fields['name']);
+
+				if(SEO_URL_FORMAT == 'parent' && SEO_URL_CATEGORY_DIR == 'off') {
+					$cID = (int)$product->fields['c_id'];
+					$pName = $this->get_category_name($cID, 'original') . '-' . $pName;
 				}
-				$define .= $this->strip($product->fields['name']) . '\');';
-				// END SEO-ADD-PRODUCT-CAT PATCH
+
+				$define = 'define(\'PRODUCT_NAME_' . $product->fields['id'] . '\', \'' . $pName . '\');';
 				$prod_cache .= $define . "\n";
 				eval("$define");
 				$product->MoveNext();
 			}
+
 			$this->save_cache($this->cache_file . 'products', $prod_cache, 'EVAL', 1 , 1);
-			unset($prod_cache);
+			unset($cID, $masterID, $pName, $define, $sql, $product, $prod_cache);
 		}
 		else
 		{
@@ -1151,7 +1012,9 @@
  * @author Bobby Easland
  * @version 1.0
  */
-	function generate_manufacturers_cache(){
+	function generate_manufacturers_cache() {
+		global $db;
+
 		$this->is_cached($this->cache_file . 'manufacturers', $is_cached, $is_expired);
 		if ( !$is_cached || $is_expired ) { // it's not cached so create it
 		$sql = "SELECT m.manufacturers_id as id, m.manufacturers_name as name
@@ -1159,10 +1022,10 @@
 				LEFT JOIN ".TABLE_MANUFACTURERS_INFO." md
 				ON m.manufacturers_id=md.manufacturers_id
 				AND md.languages_id='".(int)$this->languages_id."'";
-		$manufacturers = $this->db->Execute($sql, false, true, 43200);
+		$manufacturers = $db->Execute($sql, false, true, 43200);
 		$man_cache = '';
 		while (!$manufacturers->EOF) {
-			$define = 'define(\'MANUFACTURER_NAME_' . $manufacturer->fields['id'] . '\', \'' . $this->strip($manufacturer->fields['name']) . '\');';
+			$define = 'define(\'MANUFACTURER_NAME_' . $manufacturer->fields['id'] . '\', \'' . $this->filter($manufacturer->fields['name']) . '\');';
 			$man_cache .= $define . "\n";
 			eval("$define");
 			$manufacturers->MoveNext();
@@ -1176,56 +1039,50 @@
 
 /**
  * Function to generate categories cache entries
- * @author Bobby Easland
- * @version 1.1
  */
-	function generate_categories_cache(){
+	function generate_categories_cache() {
+		global $db;
+
 		$this->is_cached($this->cache_file . 'categories', $is_cached, $is_expired);
-		if ( !$is_cached || $is_expired ) { // it's not cached so create it
-			switch(true){
-				/* START SEO-ADD-PRODUCT-CAT PATCH
-				 *
-				 * Patched to use SEO_ADD_PRODUCT_CAT
-				 * This allows the use of a directory structure for urls.
-				 * @author Andrew Ballanger
-				 */
-				// Disable SEO_ADD_CAT_PARENT if using the SEO-ADD-PRODUCT-CAT patch
-				case ($this->attributes['SEO-ADD-PRODUCT-CAT'] != 'true' && $this->attributes['SEO_ADD_CAT_PARENT'] == 'true'):
-				// END SEO-ADD-PRODUCT-CAT PATCH
-					$sql = "SELECT c.categories_id as id, c.parent_id, cd.categories_name as cName, cd2.categories_name as pName
-							FROM ".TABLE_CATEGORIES." c
-							LEFT JOIN ".TABLE_CATEGORIES_DESCRIPTION." cd2
-							ON c.parent_id=cd2.categories_id AND cd2.language_id='".(int)$this->languages_id."',
-							".TABLE_CATEGORIES_DESCRIPTION." cd
-							WHERE c.categories_id=cd.categories_id
-							AND cd.language_id='".(int)$this->languages_id."'";
-					//IMAGINADW.COM;
-					break;
-				default:
-					$sql = "SELECT categories_id as id, categories_name as cName
-							FROM ".TABLE_CATEGORIES_DESCRIPTION."
-							WHERE language_id='".(int)$this->languages_id."'";
-					break;
-			} # end switch
-			$category = $this->db->Execute($sql, false, true, 43200);
+		if(!$is_cached || $is_expired) { // it's not cached so create it
+			if(SEO_URL_FORMAT == 'parent' || SEO_URL_CATEGORY_DIR == 'short') {
+				$sql = 'SELECT c.categories_id as id, c.parent_id, cd.categories_name as cName, cd2.categories_name as pName ' .
+					'FROM `' . TABLE_CATEGORIES . '` AS c ' .
+					'LEFT JOIN `' . TABLE_CATEGORIES_DESCRIPTION . '` AS cd2 ' .
+					'ON c.parent_id=cd2.categories_id AND cd2.language_id=\'' . (int)$this->languages_id . '\'' .
+					', `' . TABLE_CATEGORIES_DESCRIPTION . '` AS cd ' .
+					'WHERE c.categories_id=cd.categories_id ' .
+					'AND cd.language_id=\'' . (int)$this->languages_id . '\'';
+			}
+			else {
+				$sql = 'SELECT categories_id as id, categories_name as cName ' .
+					'FROM `' . TABLE_CATEGORIES_DESCRIPTION . '` ' .
+					'WHERE language_id=\'' . (int)$this->languages_id . '\'';
+			}
+			$category = $db->Execute($sql, false, true, 43200);
 			$cat_cache = '';
 			while (!$category->EOF) {
-				// START SEO-ADD-PRODUCT-CAT PATCH
-				if($this->attributes['SEO_ADD_PRODUCT_CAT'] == 'true')
-				{
+				$cName = '';
+				$cPath = $this->get_full_cPath($category->fields['categories_id'], $single_cID);
+				if(SEO_URL_CATEGORY_DIR == 'full') {
 					$path = array();
-					$this->get_parent_categories_path($path, $category->fields['id']);
-					$name = implode('/', $path) . '/' . $cName;
+					$this->get_parent_categories_path($path, $single_cID);
+					if(sizeof($path) > 0) {
+						$cName = implode('/', $path);
+						$cut = strrpos($cName, $this->reg_anchors['cPath']);
+						if($cut !== false) $cName = substr($cName, 0, $cut);
+						unset($cut);
+					}
+					unset($path);
 				}
-				else
-				{
-				// END SEO-ADD-PRODUCT-CAT PATCH
-					$id = $this->get_full_cPath($category->fields['id'], $single_cID);
-					$name = $this->not_null($category->fields['pName']) ? $category->fields['pName'] . ' ' . $category->fields['cName'] : $category->fields['cName'];
-				// START SEO-ADD-PRODUCT-CAT PATCH
+				else if (SEO_URL_FORMAT == 'parent') {
+					$cName = zen_not_null($category->fields['pName']) ? $this->filter($category->fields['pName'] . ' ' . $category->fields['cName']) : $this->filter($category->fields['cName']);
 				}
-				// END SEO-ADD-PRODUCT-CAT PATCH
-				$define = 'define(\'CATEGORY_NAME_' . $id . '\', \'' . $this->strip($name) . '\');';
+				else {
+					$cName = $this->filter($category->fields['cName']);
+				}
+
+				$define = 'define(\'CATEGORY_NAME_' . $cPath . '\', \'' . $cName . '\');';
 				$cat_cache .= $define . "\n";
 				eval("$define");
 				$category->MoveNext();
@@ -1234,57 +1091,6 @@
 			unset($cat_cache);
 		} else {
 			$this->get_cache($this->cache_file . 'categories');
-		}
-	} # end function
-
-/**
- * Function to generate articles cache entries
- * @author Bobby Easland
- * @version 1.0
- */
-	function generate_news_articles_cache(){
-		$this->is_cached($this->cache_file . 'news_articles', $is_cached, $is_expired);
-		if ( !$is_cached || $is_expired ) { // it's not cached so create it
-			$sql = "SELECT article_id as id, news_article_name as name
-					FROM ".TABLE_NEWS_ARTICLES_TEXT."
-					WHERE language_id = '".(int)$this->languages_id."'";
-			$article = $this->db->Execute($sql, false, true, 43200);
-			$article_cache = '';
-			while (!$article->EOF) {
-				$define = 'define(\'NEWS_ARTICLE_NAME_' . $article->fields['id'] . '\', \'' . $this->strip($article->fields['name']) . '\');';
-				$article_cache .= $define . "\n";
-				eval("$define");
-				$article->MoveNext();
-			}
-			$this->save_cache($this->cache_file . 'news_articles', $article_cache, 'EVAL', 1 , 1);
-			unset($article_cache);
-		} else {
-			$this->get_cache($this->cache_file . 'news_articles');
-		}
-	} # end function
-
-/**
- * Function to generate information cache entries
- * @author Bobby Easland
- * @version 1.0
- */
-	function generate_info_manager_cache(){
-		$this->is_cached($this->cache_file . 'info_manager', $is_cached, $is_expired);
-		if ( !$is_cached || $is_expired ) { // it's not cached so create it
-			$sql = "SELECT pages_id as id, pages_title as name
-					FROM ".TABLE_INFO_MANAGER;
-			$information = $this->db->Execute($sql, false, true, 43200);
-			$information_cache = '';
-			while (!$information->EOF) {
-				$define = 'define(\'INFO_MANAGER_PAGE_NAME_' . $information->fields['id'] . '\', \'' . $this->strip($information->fields['name']) . '\');';
-				$information_cache .= $define . "\n";
-				eval("$define");
-				$information->MoveNext();
-			}
-			$this->save_cache($this->cache_file . 'info_manager', $information_cache, 'EVAL', 1 , 1);
-			unset($information_cache);
-		} else {
-			$this->get_cache($this->cache_file . 'info_manager');
 		}
 	} # end function
 
@@ -1347,14 +1153,16 @@
  * @return mixed
  */
 	function get_cache($name = 'GLOBAL', $local_memory = false){
+		global $db;
+
 		$select_list = 'cache_id, cache_language_id, cache_name, cache_data, cache_global, cache_gzip, cache_method, cache_date, cache_expires';
 		$global = ( $name == 'GLOBAL' ? true : false ); // was GLOBAL passed or is using the default?
 		switch($name){
 			case 'GLOBAL':
-				$cache = $this->db->Execute("SELECT ".$select_list." FROM " . TABLE_SEO_CACHE . " WHERE cache_language_id='".(int)$this->languages_id."' AND cache_global='1'");
+				$cache = $db->Execute("SELECT ".$select_list." FROM " . TABLE_SEO_CACHE . " WHERE cache_language_id='".(int)$this->languages_id."' AND cache_global='1'");
 				break;
 			default:
-				$cache = $this->db->Execute("SELECT ".$select_list." FROM " . TABLE_SEO_CACHE . " WHERE cache_id='".md5($name)."' AND cache_language_id='".(int)$this->languages_id."'");
+				$cache = $db->Execute("SELECT ".$select_list." FROM " . TABLE_SEO_CACHE . " WHERE cache_id='".md5($name)."' AND cache_language_id='".(int)$this->languages_id."'");
 				break;
 		}
 		$num_rows = $cache->RecordCount();
@@ -1438,8 +1246,10 @@
  * @author Bobby Easland
  * @version 1.0
  */
-	function cache_gc(){
-		$this->db->Execute("DELETE FROM " . TABLE_SEO_CACHE . " WHERE cache_expires <= '" . date("Y-m-d H:i:s") . "'");
+	function cache_gc() {
+		global $db;
+
+		$db->Execute("DELETE FROM " . TABLE_SEO_CACHE . " WHERE cache_expires <= '" . date("Y-m-d H:i:s") . "'");
 	}
 
 /**
@@ -1451,7 +1261,9 @@
  * @param boolean $is_expired NOTE: passed by reference
  */
 	function is_cached($name, &$is_cached, &$is_expired){ // NOTE: $is_cached and $is_expired is passed by reference !!
-		$this->cache_query = $this->db->Execute("SELECT cache_expires FROM " . TABLE_SEO_CACHE . " WHERE cache_id='".md5($name)."' AND cache_language_id='".(int)$this->languages_id."' LIMIT 1");
+		global $db;
+
+		$this->cache_query = $db->Execute("SELECT cache_expires FROM " . TABLE_SEO_CACHE . " WHERE cache_id='".md5($name)."' AND cache_language_id='".(int)$this->languages_id."' LIMIT 1");
 		$is_cached = ( $this->cache_query->RecordCount() > 0 ? true : false );
 
 		if ($is_cached){
@@ -1460,108 +1272,141 @@
 		}
 	}# end function is_cached()
 
-/**
- * Function to initialize the redirect logic
- * @author Bobby Easland
- * @version 1.1
- */
-	function check_redirect(){
-		$this->need_redirect = false;
-		$this->uri = ltrim( basename($_SERVER['REQUEST_URI']), '/' );
+	function check_canonical() {
+		global $db, $request_type;
+
+		$this->uri = ltrim($_SERVER['REQUEST_URI']);
 		$this->real_uri = ltrim( basename($_SERVER['SCRIPT_NAME']) . '?' . $_SERVER['QUERY_STRING'], '/' );
+		$this->uri_parsed = parse_url($this->uri);
+		$this->canonical = null;
 
-		// damn zen cart attributes use illegal url characters
-		if ($this->is_attribute_string($this->uri)) {
-			$parsed_url = parse_url($this->uri);
-			$this->uri_parsed = parse_url($parsed_url['scheme']);
-			$this->uri_parsed['query'] = preg_replace('/products_id=([0-9]+)/', 'products_id=$1:' . $parsed_url['path'], $this->uri_parsed['query']);
-		} else {
-			$this->uri_parsed = parse_url($this->uri);
-		}
-
-		$this->attributes['SEO_REDIRECT']['URI'] = $this->uri;
-		$this->attributes['SEO_REDIRECT']['REAL_URI'] = $this->real_uri;
-		$this->attributes['SEO_REDIRECT']['URI_PARSED'] = $this->uri_parsed;
-		$this->need_redirect();
 		$this->check_seo_page();
-
-		if ($this->need_redirect && $this->is_seopage && $this->attributes['USE_SEO_REDIRECT'] == 'true') {
-			$this->do_redirect();
-		}
-	} # end function
-
-/**
- * Function to check if the URL needs to be redirected
- * @author Bobby Easland
- * @version 1.2
- */
-	function need_redirect() {
-		$this->need_redirect = ((preg_match('/main_page=/i', $this->uri)) ? true : false);
-		// QUICK AND DIRTY WAY TO DISABLE REDIRECTS ON PAGES WHEN SEO_URLS_ONLY_IN is enabled IMAGINADW.COM
-		$sefu = explode(",", preg_replace('/ +/', '', SEO_URLS_ONLY_IN ));
-		if ((SEO_URLS_ONLY_IN!="") && !in_array($_GET['main_page'],$sefu) ) $this->need_redirect = false;
-		// IMAGINADW.COM
-
-		$this->attributes['SEO_REDIRECT']['NEED_REDIRECT'] = $this->need_redirect ? 'true' : 'false';
-	}
-
-/**
- * Function to check if it's a valid redirect page
- * @author Bobby Easland
- * @version 1.1
- */
-	function check_seo_page() {
-		if (!isset($_GET['main_page']) || (!$this->not_null($_GET['main_page']))) {
-			$_GET['main_page'] = 'index';
-		}
-
-		$this->is_seopage = (($this->attributes['SEO_ENABLED'] == 'true') ? true : false);
-
-		$this->attributes['SEO_REDIRECT']['IS_SEOPAGE'] = $this->is_seopage ? 'true' : 'false';
-	}
-
-/**
- * Function to perform redirect
- * @author Bobby Easland
- * @version 1.0
- */
-	function do_redirect() {
-		$p = @explode('&', $this->uri_parsed['query']);
-		foreach( $p as $index => $value ) {
-			$tmp = @explode('=', $value);
-
-			if ($tmp[0] == 'main_page') continue;
-
-			switch($tmp[0]){
-				case 'products_id':
-					if ($this->is_attribute_string('products_id=' . $tmp[1])) {
-						$pieces = explode(':', $tmp[1]);
-						$params[] = $tmp[0] . '=' . $pieces[0];
-					} else {
-						$params[] = $tmp[0] . '=' . $tmp[1];
+		if($this->is_seopage && array_key_exists('products_id', $_GET)) {
+			// Retrieve the product type handler from the database
+			$type = $db->Execute(
+				'SELECT `pt`.`type_handler` ' .
+				'FROM `'. TABLE_PRODUCTS .'` AS `p` ' .
+				'LEFT JOIN `'. TABLE_PRODUCT_TYPES .'` AS `pt` ON `pt`.`type_id` = `p`.`products_type` ' .
+				'WHERE `p`. `products_id` = \'' . (int)$_GET['products_id'] . '\' LIMIT 1'
+			);
+			if(!$type->EOF) {
+				// Validate this was a request to the product page
+				$product_page = $type->fields['type_handler'] . '_info';
+				if($_GET['main_page'] == $product_page) {
+					// Only add the canonical if one is found
+					$this->canonical = $this->get_product_canonical((int)$_GET['products_id']);
+					if($this->canonical !== null) {
+						$separator = '?';
+						$this->canonical = $this->make_url(
+							$product_page,
+							$this->canonical,
+							'products_id', (int)$_GET['products_id'],
+							SEO_URL_END,
+							$separator
+						);
+						$this->canonical = ($request_type == 'SSL' ? HTTPS_SERVER . DIR_WS_HTTPS_CATALOG : HTTP_SERVER . DIR_WS_CATALOG) . htmlspecialchars($this->canonical, ENT_QUOTES, CHARSET, false);
+						unset($separator);
 					}
-					break;
-				default:
-					$params[] = $tmp[0].'='.$tmp[1];
-					break;
+				}
 			}
-		} # end foreach( $params as $var => $value )
-		$params = ( sizeof($params) > 1 ? implode('&', $params) : $params[0] );
+			unset($type, $product_page, $separator);
+		}
+	}
 
-		$url = $this->href_link($_GET['main_page'], $params, 'NONSSL', false);
-		// cleanup url for redirection
-		$url = str_replace('&amp;', '&', $url);
+	function check_redirect() {
+		if($this->is_seopage) {
+			$this->need_redirect();
 
-		switch($this->attributes['USE_SEO_REDIRECT']){
+			// This does not need to run if we are not on a seo_page
+			if($this->need_redirect) {
+				$this->do_redirect();
+			}
+		}
+	}
+
+	function need_redirect() {
+		$this->need_redirect = false;
+
+		// If we are in the admin we should never redirect
+		// We should also avoid redirects with post content
+		if(IS_ADMIN_FLAG != 'true' && count($_POST) <= 0) {
+
+			// First see if we need to redirect because the URL contains main_page=
+			$this->need_redirect = (preg_match('/[?&]main_page=([^&]*)/', $this->uri) === 1 ? true : false);
+
+			// Retrieve the generated URL for this request
+			$params = array();
+			foreach($_GET as $key => $value) {
+				if($key == 'main_page') continue;
+
+				// Fix the case sensitivity, shopping cart sometimes breaks this
+				if($key == 'cpath') $key = 'cPath';
+
+				$params[] = $key . '=' . $value;
+			}
+			$params = (sizeof($params) > 0 ? implode('&', $params) : '');
+
+			$my_url = $this->href_link($_GET['main_page'], $params, 'NONSSL', false, true, false, true);
+			if($my_url === null) $my_url = original_zen_href_link($_GET['main_page'], $params, 'NONSSL', false);
+			$this->redirect_url = parse_url($my_url);
+			unset($my_url);
+
+			// See if the path's match
+			if($this->uri_parsed['path'] != $this->redirect_url['path'] && rawurldecode($this->uri_parsed['path']) != $this->redirect_url['path']) {
+				if($this->canonical !== null) {
+					$canonical = parse_url($this->canonical);
+					if($this->uri_parsed['path'] != $canonical['path']) {
+						$this->need_redirect = true;
+					}
+				}
+				else {
+					$this->need_redirect = true;
+				}
+
+			}
+
+			// See if the parameters match. We do not care about order.
+			else {
+				$params = asort(explode('&', $this->uri_parsed['query']));
+				$old_params = asort(explode('&', $this->uri_parsed['query']));
+				if(count($params) != count($old_params)) {
+					$this->need_redirect = true;
+				}
+				else {
+					for($i=0,$n=count($params);$i<$n;$i++) {
+						if($params[$i] != $old_params[$i]) {
+							$this->need_redirect = true;
+							break;
+						}
+					}
+				}
+				unset($params, $old_params);
+			}
+
+			$this->redirect_url = $this->redirect_url['path'] . (array_key_exists('query', $this->redirect_url) ? '?' . $this->redirect_url['query'] : '');
+		}
+	}
+
+	function check_seo_page() {
+		$this->is_seopage = false;
+		if(defined('SEO_ENABLED') && SEO_ENABLED == 'true') {
+			$sefu = explode(',', str_replace(' ', '', SEO_URLS_ONLY_IN));
+			if(!zen_not_null(SEO_URLS_ONLY_IN) || in_array($_GET['main_page'], $sefu)) {
+				$this->is_seopage = true;
+			}
+		}
+	}
+
+	function do_redirect() {
+		// Cleanup URL for redirection (this is actually needed)
+		$this->redirect_url = str_replace('&amp;', '&', $this->redirect_url);
+
+		switch(SEO_USE_REDIRECT){
 			case 'true':
-				header("HTTP/1.1 301 Moved Permanently");
-				header("Location: $url");
+				header('HTTP/1.1 301 Moved Permanently');
+				header('Location: ' . $this->redirect_url);
 				break;
 			default:
-				$this->attributes['SEO_REDIRECT']['REDIRECT_URL'] = $url;
-				break;
-		} # end switch
-	} # end function do_redirect
-
-} # end class
-?>
+		}
+	}
+}

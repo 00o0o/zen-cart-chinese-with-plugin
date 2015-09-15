@@ -1,12 +1,12 @@
 <?php
 /**
  * pop up image additional
- *
+ * mod Image Handler 4.3.2
  * @package page
- * @copyright Copyright 2003-2006 Zen Cart Development Team
+ * @copyright Copyright 2003-2011 Zen Cart Development Team
  * @copyright Portions Copyright 2003 osCommerce
  * @license http://www.zen-cart.com/license/2_0.txt GNU Public License V2.0
- * @version $Id: header_php.php,v 2.0 Rev 8 2010-05-31 23:46:5 DerManoMann Exp $
+ * @version $Id: header_php.php 18697 2011-05-04 14:35:20Z wilt $
  * Last modified by DerManoMann 2010-05-31 23:44:44 
  */
 // This should be first line of the script:
@@ -32,13 +32,15 @@
 
   $products_image_extension = substr($products_image, strrpos($products_image, '.'));
 //Begin Image Handler changes 1 of 1
-//the next three lines are commented out for Image Handler 3
-//  $products_image_base = str_replace($products_image_extension, '', $products_image);
+//the next four lines are commented out for Image Handler 4
+//$products_image_base = preg_replace('|'.$products_image_extension.'$|', '', $products_image);
 //  $products_image_medium = $products_image_base . IMAGE_SUFFIX_MEDIUM . $products_image_extension;
 //  $products_image_large = $products_image_base . IMAGE_SUFFIX_LARGE . $products_image_extension;
+
+//$_GET['products_image_large_additional'] = str_replace(' ', '+', stripslashes($_REQUEST['products_image_large_additional']));
   $products_image_base = preg_replace('/'.$products_image_extension . '$/', '', $products_image);
   $products_image_medium = DIR_WS_IMAGES . 'medium/' . $products_image_base . IMAGE_SUFFIX_MEDIUM . $products_image_extension;
   $products_image_large  = DIR_WS_IMAGES . 'large/' . $products_image_base . IMAGE_SUFFIX_LARGE . $products_image_extension;
-//Begin Image Handler changes 1 of 1
+//End Image Handler changes 1 of 1
   // This should be last line of the script:
   $zco_notifier->notify('NOTIFY_HEADER_END_POPUP_IMAGES_ADDITIONAL');

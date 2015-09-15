@@ -2,10 +2,10 @@
 # * Main Zen Cart SQL Load for MySQL databases
 # * @package Installer
 # * @access private
-# * @copyright Copyright 2003-2012 Zen Cart Development Team
+# * @copyright Copyright 2003-2014 Zen Cart Development Team
 # * @copyright Portions Copyright 2003 osCommerce
 # * @license http://www.zen-cart.com/license/2_0.txt GNU Public License V2.0
-# * @version GIT: $Id: Author: DrByte  Tue Aug 28 16:03:47 2012 -0400 Modified in v1.5.1 $
+# * @version GIT: $Id: Author: Jack Modified in v1.5.4 $
 #
 
 ############ IMPORTANT INSTRUCTIONS ###############
@@ -87,12 +87,12 @@ CREATE TABLE admin (
   admin_name varchar(32) NOT NULL default '',
   admin_email varchar(96) NOT NULL default '',
   admin_profile int(11) NOT NULL default '0',
-  admin_pass varchar(40) NOT NULL default '',
-  prev_pass1 varchar(40) NOT NULL default '',
-  prev_pass2 varchar(40) NOT NULL default '',
-  prev_pass3 varchar(40) NOT NULL default '',
+  admin_pass varchar(255) NOT NULL default '',
+  prev_pass1 varchar(255) NOT NULL default '',
+  prev_pass2 varchar(255) NOT NULL default '',
+  prev_pass3 varchar(255) NOT NULL default '',
   pwd_last_change_date datetime NOT NULL default '0000-00-00 00:00:00',
-  reset_token varchar(60) NOT NULL default '',
+  reset_token varchar(255) NOT NULL default '',
   last_modified datetime NOT NULL default '0000-00-00 00:00:00',
   last_login_date datetime NOT NULL default '0000-00-00 00:00:00',
   last_login_ip varchar(45) NOT NULL default '',
@@ -138,7 +138,7 @@ CREATE TABLE admin_activity_log (
 
 DROP TABLE IF EXISTS admin_menus;
 CREATE TABLE admin_menus (
-  menu_key VARCHAR(32) NOT NULL DEFAULT '',
+  menu_key VARCHAR(255) NOT NULL DEFAULT '',
   language_key VARCHAR(255) NOT NULL DEFAULT '',
   sort_order INT(11) NOT NULL DEFAULT 0,
   UNIQUE KEY menu_key (menu_key)
@@ -152,11 +152,11 @@ CREATE TABLE admin_menus (
 
 DROP TABLE IF EXISTS admin_pages;
 CREATE TABLE admin_pages (
-  page_key VARCHAR(32) NOT NULL DEFAULT '',
+  page_key VARCHAR(255) NOT NULL DEFAULT '',
   language_key VARCHAR(255) NOT NULL DEFAULT '',
-  main_page varchar(64) NOT NULL default '',
-  page_params varchar(64) NOT NULL default '',
-  menu_key varchar(32) NOT NULL default '',
+  main_page varchar(255) NOT NULL default '',
+  page_params varchar(255) NOT NULL default '',
+  menu_key varchar(255) NOT NULL default '',
   display_on_menu char(1) NOT NULL default 'N',
   sort_order int(11) NOT NULL default 0,
   UNIQUE KEY page_key (page_key)
@@ -171,7 +171,7 @@ CREATE TABLE admin_pages (
 DROP TABLE IF EXISTS admin_profiles;
 CREATE TABLE admin_profiles (
   profile_id int(11) NOT NULL AUTO_INCREMENT,
-  profile_name varchar(64) NOT NULL default '',
+  profile_name varchar(255) NOT NULL default '',
   PRIMARY KEY (profile_id)
 ) CHARACTER SET utf8 COLLATE utf8_general_ci;
 
@@ -184,7 +184,7 @@ CREATE TABLE admin_profiles (
 DROP TABLE IF EXISTS admin_pages_to_profiles;
 CREATE TABLE admin_pages_to_profiles (
   profile_id int(11) NOT NULL default '0',
-  page_key varchar(32) NOT NULL default '',
+  page_key varchar(255) NOT NULL default '',
   UNIQUE KEY profile_page (profile_id, page_key),
   UNIQUE KEY page_profile (page_key, profile_id)
 ) CHARACTER SET utf8 COLLATE utf8_general_ci;
@@ -375,6 +375,7 @@ CREATE TABLE countries (
   countries_iso_code_2 char(2) NOT NULL default '',
   countries_iso_code_3 char(3) NOT NULL default '',
   address_format_id int(11) NOT NULL default '0',
+  status tinyint(1) default 1,
   PRIMARY KEY  (countries_id),
   KEY idx_countries_name_zen (countries_name),
   KEY idx_address_format_id_zen (address_format_id),
@@ -553,7 +554,7 @@ CREATE TABLE customers (
   customers_default_address_id int(11) NOT NULL default '0',
   customers_telephone varchar(32) NOT NULL default '',
   customers_fax varchar(32) default NULL,
-  customers_password varchar(40) NOT NULL default '',
+  customers_password varchar(255) NOT NULL default '',
   customers_newsletter char(1) default NULL,
   customers_group_pricing int(11) NOT NULL default '0',
   customers_email_format varchar(4) NOT NULL default 'TEXT',
@@ -1298,7 +1299,7 @@ CREATE TABLE paypal_payment_status_history (
   txn_id varchar(64) NOT NULL default '',
   parent_txn_id varchar(64) NOT NULL default '',
   payment_status varchar(17) NOT NULL default '',
-  pending_reason varchar(14) default NULL,
+  pending_reason varchar(32) default NULL,
   date_added datetime NOT NULL default '0001-01-01 00:00:00',
   PRIMARY KEY (payment_status_history_id),
   KEY idx_paypal_ipn_id_zen (paypal_ipn_id)
@@ -1893,7 +1894,7 @@ CREATE TABLE salemaker_sales (
 
 DROP TABLE IF EXISTS sessions;
 CREATE TABLE sessions (
-  sesskey varchar(64) NOT NULL default '',
+  sesskey varchar(255) NOT NULL default '',
   expiry int(11) unsigned NOT NULL default '0',
   value mediumblob NOT NULL,
   PRIMARY KEY  (sesskey)
@@ -1986,7 +1987,7 @@ DROP TABLE IF EXISTS whos_online;
 CREATE TABLE whos_online (
   customer_id int(11) default NULL,
   full_name varchar(64) NOT NULL default '',
-  session_id varchar(128) NOT NULL default '',
+  session_id varchar(255) NOT NULL default '',
   ip_address varchar(45) NOT NULL default '',
   time_entry varchar(14) NOT NULL default '',
   time_last_click varchar(14) NOT NULL default '',
@@ -2182,7 +2183,6 @@ INSERT INTO banners (banners_title, banners_url, banners_image, banners_group, b
 INSERT INTO banners (banners_title, banners_url, banners_image, banners_group, banners_html_text, expires_impressions, expires_date, date_scheduled, date_added, date_status_change, status, banners_open_new_windows, banners_on_ssl, banners_sort_order) VALUES ('Zen Cart the art of e-commerce', 'http://www.zen-cart.com', 'banners/125x125_zen_logo.gif', 'SideBox-Banners', '', 0, NULL, NULL, '2004-01-11 20:59:12', NULL, 1, 1, 1, 0);
 INSERT INTO banners (banners_title, banners_url, banners_image, banners_group, banners_html_text, expires_impressions, expires_date, date_scheduled, date_added, date_status_change, status, banners_open_new_windows, banners_on_ssl, banners_sort_order) VALUES ('还考虑什么? 现在就装一个吧!', 'http://www.zen-cart.com', 'banners/think_anim.gif', 'Wide-Banners', '', 0, NULL, NULL, '2004-01-12 20:53:18', NULL, 1, 1, 1, 0);
 INSERT INTO banners (banners_title, banners_url, banners_image, banners_group, banners_html_text, expires_impressions, expires_date, date_scheduled, date_added, date_status_change, status, banners_open_new_windows, banners_on_ssl, banners_sort_order) VALUES ('Zen Cart the art of e-commerce', 'http://www.zen-cart.com', 'banners/bw_zen_88wide.gif', 'BannersAll', '', 0, NULL, NULL, '2005-05-13 10:54:38', NULL, 1, 1, 1, 10);
-INSERT INTO banners (banners_title, banners_url, banners_image, banners_group, banners_html_text, expires_impressions, expires_date, date_scheduled, date_added, date_status_change, status, banners_open_new_windows, banners_on_ssl, banners_sort_order) VALUES ('立即注册PayPal并开始接受信用卡付款!', 'https://www.paypal.com/c2/mrb/pal=GR5QUVVL9AFGN&MRB=R-4DM17246PS436904F', 'banners/cardsvcs_468x60.gif', 'Wide-Banners', '', 0, NULL, NULL, '2006-03-13 11:02:43', NULL, 1, 1, 1, 0);
 INSERT INTO banners (banners_title, banners_url, banners_image, banners_group, banners_html_text, expires_impressions, expires_date, date_scheduled, date_added, date_status_change, status, banners_open_new_windows, banners_on_ssl, banners_sort_order) VALUES ('eStart Your Web Store with Zen Cart(R)', 'http://www.zen-cart.com/book', 'banners/big-book-ad.gif', 'Wide-Banners', '', '0', NULL, NULL, '2007-02-10 00:00:00',NULL,'1','1','1','1');
 INSERT INTO banners (banners_title, banners_url, banners_image, banners_group, banners_html_text, expires_impressions, expires_date, date_scheduled, date_added, date_status_change, status, banners_open_new_windows, banners_on_ssl, banners_sort_order) VALUES ('eStart Your Web Store with Zen Cart(R)', 'http://www.zen-cart.com/book', 'banners/tall-book.gif', 'SideBox-Banners', '', '0', NULL, NULL, '2007-02-10 00:00:00',NULL,'1','1','1','1');
 INSERT INTO banners (banners_title, banners_url, banners_image, banners_group, banners_html_text, expires_impressions, expires_date, date_scheduled, date_added, date_status_change, status, banners_open_new_windows, banners_on_ssl, banners_sort_order) VALUES ('Zen Cart 中文社区', 'http://www.zen-cart.cn', 'banners/logo-zencart-cn-125.gif', 'BannersAll', '', '0', NULL, NULL, '2005-12-10 00:00:00',NULL,'1','1','1','15');
@@ -2212,7 +2212,11 @@ INSERT INTO configuration (configuration_title, configuration_key, configuration
 INSERT INTO configuration (configuration_title, configuration_key, configuration_value, configuration_description, configuration_group_id, sort_order, set_function, date_added) VALUES ('销售税显示', 'STORE_TAX_DISPLAY_STATUS', '0', '即使金额为零也显示销售税<br />0= 否<br />1= 是', '1', '21', 'zen_cfg_select_option(array(\'0\', \'1\'), ', now());
 INSERT INTO configuration (configuration_title, configuration_key, configuration_value, configuration_description, configuration_group_id, sort_order, set_function, date_added) VALUES ('分开显示税项', 'SHOW_SPLIT_TAX_CHECKOUT', 'false', '如果有多个税项，结帐时每个税项单独显示一行', '1', '22', 'zen_cfg_select_option(array(\'true\', \'false\'), ', now());
 
-INSERT INTO configuration (configuration_title, configuration_key, configuration_value, configuration_description, configuration_group_id, sort_order, last_modified, date_added, use_function, set_function) VALUES ('管理对话超时秒数', 'SESSION_TIMEOUT_ADMIN', '900', '输入以秒为单位的时间。<br />PCI 兼容要求最大不超过 900 。<br /> 默认=900<br />例如: 900= 15 分钟<br /><br />备注: 时间太短会导致添加/编辑商品时超时', 1, 40, NULL, now(), NULL, 'zen_cfg_select_option(array(\'900\', \'600\', \'300\'), ');
+INSERT INTO configuration (configuration_title, configuration_key, configuration_value, configuration_description, configuration_group_id, sort_order, last_modified, date_added, use_function, set_function) VALUES ('PA-DSS 管理页面 Session 超时设置?', 'PADSS_ADMIN_SESSION_TIMEOUT_ENFORCED', '1', 'PA-DSS 规范要求管理页面在15分钟没有操作时关闭。<strong>禁用后网站不符合 PA-DSS 规范。</strong>', 1, 30, now(), now(), NULL, 'zen_cfg_select_drop_down(array(array(\'id\'=>\'0\', \'text\'=>\'Non-Compliant\'), array(\'id\'=>\'1\', \'text\'=>\'On\')),');
+INSERT INTO configuration (configuration_title, configuration_key, configuration_value, configuration_description, configuration_group_id, sort_order, last_modified, date_added, use_function, set_function) VALUES ('PA-DSS 高强度密码设置?', 'PADSS_PWD_EXPIRY_ENFORCED', '1', 'PA-DSS 规范要求管理员密码90天必须修改，且不能使用最近4次密码。<strong>禁用后网站不符合 PA-DSS 规范。</strong>', 1, 30, now(), now(), NULL, 'zen_cfg_select_drop_down(array(array(\'id\'=>\'0\', \'text\'=>\'Non-Compliant\'), array(\'id\'=>\'1\', \'text\'=>\'On\')),');
+INSERT INTO configuration (configuration_title, configuration_key, configuration_value, configuration_description, configuration_group_id, sort_order, last_modified, date_added, use_function, set_function) VALUES ('PA-DSS Ajax 结帐?', 'PADSS_AJAX_CHECKOUT', '1', 'PA-DSS 兼容要求支付模块使用 ajax 生成结帐确认页面。<strong>禁用后网站不符合 PA-DSS 规范。</strong>', 1, 30, now(), now(), NULL, 'zen_cfg_select_drop_down(array(array(\'id\'=>\'0\', \'text\'=>\'Non-Compliant\'), array(\'id\'=>\'1\', \'text\'=>\'On\')),');
+
+INSERT INTO configuration (configuration_title, configuration_key, configuration_value, configuration_description, configuration_group_id, sort_order, last_modified, date_added) VALUES ('管理对话超时秒数', 'SESSION_TIMEOUT_ADMIN', '900', '输入以秒为单位的时间。<br />PCI 兼容要求最大不超过 900 。<br /> 默认=900<br />例如: 900= 15 分钟<br /><br />备注: 时间太短会导致添加/编辑商品时超时', 1, 40, NULL, now());
 INSERT INTO configuration (configuration_title, configuration_key, configuration_value, configuration_description, configuration_group_id, sort_order, last_modified, date_added, use_function, set_function) VALUES ('管理设置最大进程执行时间', 'GLOBAL_SET_TIME_LIMIT', '60', '输入以秒为单位的时间, 管理设置最大进程执行时间。<br />缺省=60 秒<br />例如: 60= 1 分钟<br /><br />备注: 仅当您进程执行时间有问题时, 才需要修改该时间限制', 1, 42, NULL, now(), NULL, NULL);
 INSERT INTO configuration (configuration_title, configuration_key, configuration_value, configuration_description, configuration_group_id, sort_order, set_function, date_added) VALUES ('显示是否有新版本', 'SHOW_VERSION_UPDATE_IN_HEADER', 'true', '自动显示是否有Zen Cart新版本。打开该选项有时会降低管理页面打开时间。(显示于登录后的主索引页面和服务器信息页面)', 1, 44, 'zen_cfg_select_option(array(\'true\', \'false\'), ', now());
 INSERT INTO configuration (configuration_title, configuration_key, configuration_value, configuration_description, configuration_group_id, sort_order, set_function, date_added) VALUES ('商店模式', 'STORE_STATUS', '0', '商店模式<br />0= 正常<br />1= 商品展示, 不显示价格<br />2= 商品展示, 显示价格', '1', '25', 'zen_cfg_select_option(array(\'0\', \'1\', \'2\'), ', now());
@@ -2229,6 +2233,7 @@ INSERT INTO configuration (configuration_title, configuration_key, configuration
 INSERT INTO configuration (configuration_title, configuration_key, configuration_value, configuration_description, configuration_group_id, sort_order, set_function, date_added) VALUES ('打开phpBB链接?', 'PHPBB_LINKS_ENABLED', 'false', 'Zen Cart的新帐号要和您的(已安装)phpBB论坛同步吗?', '1', '120', 'zen_cfg_select_option(array(\'true\', \'false\'),', now());
 
 INSERT INTO configuration (configuration_title, configuration_key, configuration_value, configuration_description, configuration_group_id, sort_order, set_function, date_added) VALUES ('显示分类计数 - 管理员', 'SHOW_COUNTS_ADMIN', 'true', '在管理页面显示分类计数吗?', '1', '19', 'zen_cfg_select_option(array(\'true\', \'false\'), ', now());
+INSERT INTO configuration (configuration_title, configuration_key, configuration_value, configuration_description, configuration_group_id, sort_order, set_function, date_added) VALUES ('显示分类的链接状态', 'SHOW_CATEGORY_PRODUCTS_LINKED_STATUS', 'true', '显示分类产品链接状态?', '1', '19', 'zen_cfg_select_option(array(\'true\', \'false\'), ', now());
 INSERT INTO configuration (configuration_title, configuration_key, configuration_value, configuration_description, configuration_group_id, sort_order, last_modified, date_added, use_function, set_function) VALUES ('货币兑换比率', 'CURRENCY_UPLIFT_RATIO', '1.05', '自动更新汇率时，需要使用的"额外"比率是多少？<br />例如: 从汇率服务器更新银行汇率后，您要在银行汇率基础上增加多少比例来设置给客户的汇率？<br /><br /><strong>缺省: 1.05 </strong><br />将公布的银行汇率乘以1.05作为商店的汇率。', 1, 55, NULL, now(), NULL, NULL);
 
 
@@ -2382,6 +2387,7 @@ INSERT INTO configuration (configuration_title, configuration_key, configuration
 INSERT INTO configuration (configuration_title, configuration_key, configuration_value, configuration_description, configuration_group_id, sort_order, date_added) VALUES ('已安装配送模块', 'MODULE_SHIPPING_INSTALLED', 'flat.php;freeshipper.php;item.php;storepickup.php', '配送模块文件名用分号分开。自动更新，无需编辑。(例如: ups.php;flat.php;item.php)', '6', '0', now());
 
 INSERT INTO configuration (configuration_title, configuration_key, configuration_value, configuration_description, configuration_group_id, sort_order, date_added, use_function, set_function) VALUES ('启用免运费模块', 'MODULE_SHIPPING_FREESHIPPER_STATUS', 'True', '要启用免运费模块吗?', 6, 0, now(), NULL, 'zen_cfg_select_option(array(\'True\', \'False\'), ');
+INSERT INTO configuration (configuration_title, configuration_key, configuration_value, configuration_description, configuration_group_id, sort_order, date_added) values ('商店提货', 'MODULE_SHIPPING_STOREPICKUP_LOCATIONS_LIST', '自行提货', '输入以分号(;)分开的地点列表。<br>可以在每个地点后加上逗号和数字来设定一个手续费。如果没有设定数字，将使用下一个设置的运费值。<br><br>例如:<br>121 Main Street;20 Church Street<br>Sunnyside,4.00;Lee Park,5.00;High Street,0.00<br>Dallas;Tulsa,5.00;Phoenix,0.00<br>多语言请参考本模块语言文件中的说明。', '6', '0', now());
 INSERT INTO configuration (configuration_title, configuration_key, configuration_value, configuration_description, configuration_group_id, sort_order, date_added, use_function, set_function) VALUES ('免运费成本', 'MODULE_SHIPPING_FREESHIPPER_COST', '0.00', '免运费成本?', 6, 6, now(), NULL, NULL);
 INSERT INTO configuration (configuration_title, configuration_key, configuration_value, configuration_description, configuration_group_id, sort_order, date_added, use_function, set_function) VALUES ('手续费', 'MODULE_SHIPPING_FREESHIPPER_HANDLING', '0', '免运费手续费。', 6, 0, now(), NULL, NULL);
 INSERT INTO configuration (configuration_title, configuration_key, configuration_value, configuration_description, configuration_group_id, sort_order, date_added, use_function, set_function) VALUES ('税率', 'MODULE_SHIPPING_FREESHIPPER_TAX_CLASS', '0', '免运费手续费税率。', 6, 0, now(), 'zen_get_tax_class_title', 'zen_cfg_pull_down_tax_classes(');
@@ -2502,11 +2508,11 @@ INSERT INTO configuration (configuration_title, configuration_key, configuration
 
 INSERT INTO configuration (configuration_title, configuration_key, configuration_value, configuration_description, configuration_group_id, sort_order, set_function, date_added) VALUES ('登录时提醒合并购物车', 'SHOW_SHOPPING_CART_COMBINED', '1', '客户登录时，如果以前购物车中有商品，将于现有购物车中的商品合并。<br /><br />要提醒客户吗?<br /><br />0= OFF, 不提醒<br />1= Yes 提醒并转到购物车页面<br />2= Yes 提醒，但不转到购物车页面', '9', '35', 'zen_cfg_select_option(array(\'0\', \'1\', \'2\'), ', now());
 
-INSERT INTO configuration (configuration_title, configuration_key, configuration_value, configuration_description, configuration_group_id, sort_order, set_function, date_added) VALUES ('网页解析时间', 'STORE_PAGE_PARSE_TIME', 'false', '保存解析页面的时间', '10', '1', 'zen_cfg_select_option(array(\'true\', \'false\'), ', now());
-INSERT INTO configuration (configuration_title, configuration_key, configuration_value, configuration_description, configuration_group_id, sort_order, date_added) VALUES ('日志保存到', 'STORE_PAGE_PARSE_TIME_LOG', '/var/log/www/zen/page_parse_time.log', '记录页面解析时间的目录和文件名', '10', '2', now());
-INSERT INTO configuration (configuration_title, configuration_key, configuration_value, configuration_description, configuration_group_id, sort_order, date_added) VALUES ('日志日期格式', 'STORE_PARSE_DATE_TIME_FORMAT', '%d/%m/%Y %H:%M:%S', '日期格式', '10', '3', now());
-INSERT INTO configuration (configuration_title, configuration_key, configuration_value, configuration_description, configuration_group_id, sort_order, set_function, date_added) VALUES ('显示网页解析时间', 'DISPLAY_PAGE_PARSE_TIME', 'false', '在每个页面底部显示页面解析时间<br />显示解析时间并不要求保存。', '10', '4', 'zen_cfg_select_option(array(\'true\', \'false\'), ', now());
-INSERT INTO configuration (configuration_title, configuration_key, configuration_value, configuration_description, configuration_group_id, sort_order, set_function, date_added) VALUES ('保存数据库查询', 'STORE_DB_TRANSACTIONS', 'false', '在页面解析时间记录中保存数据库查询(仅适用PHP4)', '10', '5', 'zen_cfg_select_option(array(\'true\', \'false\'), ', now());
+INSERT INTO configuration (configuration_title, configuration_key, configuration_value, configuration_description, configuration_group_id, sort_order, set_function, date_added) VALUES ('记录页面解析时间', 'STORE_PAGE_PARSE_TIME', 'false', '保存(到文件)解析页面的时间', '10', '1', 'zen_cfg_select_option(array(\'true\', \'false\'), ', now());
+INSERT INTO configuration (configuration_title, configuration_key, configuration_value, configuration_description, configuration_group_id, sort_order, date_added) VALUES ('日志路径', 'STORE_PAGE_PARSE_TIME_LOG', '/var/log/www/zen/page_parse_time.log', '页面解析时间的日志目录和文件名', '10', '2', now());
+INSERT INTO configuration (configuration_title, configuration_key, configuration_value, configuration_description, configuration_group_id, sort_order, date_added) VALUES ('日志时间格式', 'STORE_PARSE_DATE_TIME_FORMAT', '%d/%m/%Y %H:%M:%S', '时间格式', '10', '3', now());
+INSERT INTO configuration (configuration_title, configuration_key, configuration_value, configuration_description, configuration_group_id, sort_order, set_function, date_added) VALUES ('显示页面解析时间', 'DISPLAY_PAGE_PARSE_TIME', 'false', '在每个页面底部显示页面解析时间<br />(说明: 显示解析时间并不要求保存。)', '10', '4', 'zen_cfg_select_option(array(\'true\', \'false\'), ', now());
+INSERT INTO configuration (configuration_title, configuration_key, configuration_value, configuration_description, configuration_group_id, sort_order, set_function, date_added) VALUES ('保存数据库查询', 'STORE_DB_TRANSACTIONS', 'false', '保存数据库查询到系统的 /logs/ 目录。注意，这有可能严重影响系统性能并用光硬盘空间。', '10', '5', 'zen_cfg_select_option(array(\'true\', \'false\'), ', now());
 
 INSERT INTO configuration (configuration_title, configuration_key, configuration_value, configuration_description, configuration_group_id, sort_order, set_function, date_added) VALUES ('电子邮件发送方式', 'EMAIL_TRANSPORT', 'PHP', '设置发送邮件的方式。<br /><strong>PHP</strong>为缺省方式，采用内置的PHP处理方式。<br />采用Windows和MacOS的服务器要修改该设置为<strong>SMTP</strong>。<br /><br /><strong>SMTPAUTH</strong>仅在服务器要求SMTP验证时使用，同时要设置SMTPAUTH的相应参数。<br /><br /><strong>sendmail</strong>用于linux/unix主机，使用主机上的sendmail程序<br /><strong>"sendmail-f"</strong>仅当服务器要求 -f 参数发送邮件，这个安全措施可以防止欺骗，但如果邮件服务器未设置使用该选项，会出错。<br /><br /><strong>Qmail</strong>用于linux/unix主机的Qmail邮件功能 /var/qmail/bin/sendmail', '12', '1', 'zen_cfg_select_option(array(\'PHP\', \'sendmail\', \'sendmail-f\', \'smtp\', \'smtpauth\', \'Qmail\'),', now());
 INSERT INTO configuration (configuration_title, configuration_key, configuration_value, configuration_description, configuration_group_id, sort_order, date_added) VALUES ('SMTP帐号邮箱', 'EMAIL_SMTPAUTH_MAILBOX', 'YourEmailAccountNameHere', '输入邮箱帐号名 (me@mydomain.com) 。这是SMTP授权帐号名。<br />仅在使用SMTPAUTH时需要。', '12', '101', now());
@@ -2517,7 +2523,7 @@ INSERT INTO configuration (configuration_title, configuration_key, configuration
 INSERT INTO configuration (configuration_title, configuration_key, configuration_value, configuration_description, configuration_group_id, sort_order, last_modified, date_added, use_function, set_function) VALUES ('在文本格式邮件中转换货币符号', 'CURRENCIES_TRANSLATIONS', '', '文本格式邮件中使用什么货币符号转换？', 12, 120, NULL, '2003-11-21 00:00:00', NULL, 'zen_cfg_textarea_small(');
 
 INSERT INTO configuration (configuration_title, configuration_key, configuration_value, configuration_description, configuration_group_id, sort_order, set_function, date_added) VALUES ('电子邮件换行', 'EMAIL_LINEFEED', 'LF', '定义分开邮件头的换行符', '12', '2', 'zen_cfg_select_option(array(\'LF\', \'CRLF\'),', now());
-INSERT INTO configuration (configuration_title, configuration_key, configuration_value, configuration_description, configuration_group_id, sort_order, set_function, date_added) VALUES ('使用HTML格式发送电子邮件', 'EMAIL_USE_HTML', 'false', '是否使用HTML格式发送电子邮件', '12', '3', 'zen_cfg_select_option(array(\'true\', \'false\'),', now());
+INSERT INTO configuration (configuration_title, configuration_key, configuration_value, configuration_description, configuration_group_id, sort_order, set_function, date_added) VALUES ('使用 HTML 邮件', 'EMAIL_USE_HTML', 'false', '是否使用 HTML 格式发送电子邮件', '12', '3', 'zen_cfg_select_option(array(\'true\', \'false\'),', now());
 INSERT INTO configuration (configuration_title, configuration_key, configuration_value, configuration_description, configuration_group_id, sort_order, set_function, date_added) VALUES ('通过DNS核对电子邮件地址', 'ENTRY_EMAIL_ADDRESS_CHECK', 'false', '是否通过DNS核对电子邮件地址', '6', '6', 'zen_cfg_select_option(array(\'true\', \'false\'), ', now());
 INSERT INTO configuration (configuration_title, configuration_key, configuration_value, configuration_description, configuration_group_id, sort_order, set_function, date_added) VALUES ('发送电子邮件', 'SEND_EMAILS', 'true', '是否发出电子邮件', '12', '5', 'zen_cfg_select_option(array(\'true\', \'false\'), ', now());
 INSERT INTO configuration (configuration_title, configuration_key, configuration_value, configuration_description, configuration_group_id, sort_order, set_function, date_added) VALUES ('电子邮件存档', 'EMAIL_ARCHIVE', 'false', '如果您在发邮件时，需要保存复制件，设置为 "true"。', '12', '6', 'zen_cfg_select_option(array(\'true\', \'false\'),', now());
@@ -2525,7 +2531,7 @@ INSERT INTO configuration (configuration_title, configuration_key, configuration
 INSERT INTO configuration (configuration_title, configuration_key, configuration_value, configuration_description, configuration_group_id, sort_order, date_added) VALUES ('用于显示的店主邮件地址', 'STORE_OWNER_EMAIL_ADDRESS', 'root@localhost', '商店店主的电子邮件，显示给客户的联系方式。', '12', '10', now());
 INSERT INTO configuration (configuration_title, configuration_key, configuration_value, configuration_description, configuration_group_id, sort_order, date_added) VALUES ('发件人邮件地址', 'EMAIL_FROM', 'root@localhost', '缺省的电子邮件发送人地址，在管理模块下输入邮件时可修改。', '12', '11', now());
 INSERT INTO configuration (configuration_title, configuration_key, configuration_value, configuration_description, configuration_group_id, sort_order, use_function, set_function) VALUES ('电子邮件必须从现有域名发送', 'EMAIL_SEND_MUST_BE_STORE', 'Yes', '您的邮件服务器是否要求所有发出的邮件发送地址为你现有的域名？<br /><br />该设置通常用于防止欺骗和垃圾邮件。如果设置为Yes，所有邮件的发送地址为上面设置的发件人邮件地址。', 12, 11, NULL, 'zen_cfg_select_option(array(\'No\', \'Yes\'), ');
-INSERT INTO configuration (configuration_title, configuration_key, configuration_value, configuration_description, configuration_group_id, sort_order, use_function, set_function) VALUES ('管理员电子邮件格式', 'ADMIN_EXTRA_EMAIL_FORMAT', 'TEXT', '请选择管理员电子邮件格式', 12, 12, NULL, 'zen_cfg_select_option(array(\'TEXT\', \'HTML\'), ');
+INSERT INTO configuration (configuration_title, configuration_key, configuration_value, configuration_description, configuration_group_id, sort_order, use_function, set_function) VALUES ('管理员邮件格式', 'ADMIN_EXTRA_EMAIL_FORMAT', 'TEXT', '请选择管理员电子邮件格式', 12, 12, NULL, 'zen_cfg_select_option(array(\'TEXT\', \'HTML\'), ');
 INSERT INTO configuration (configuration_title, configuration_key, configuration_value, configuration_description, configuration_group_id, sort_order, date_added) VALUES ('发送订单确认电子邮件的复件到', 'SEND_EXTRA_ORDER_EMAILS_TO', '', '发送订单确认电子邮件的复件到以下地址，格式为：名字一 &lt;email@address1&gt;, 名字二 &lt;email@address2&gt;', '12', '12', now());
 INSERT INTO configuration (configuration_title, configuration_key, configuration_value, configuration_description, configuration_group_id, sort_order, set_function, date_added) VALUES ('发送创建帐号电子邮件的复件 - 状态', 'SEND_EXTRA_CREATE_ACCOUNT_EMAILS_TO_STATUS', '0', '是否发送创建帐号电子邮件的复件<br />0= 否 1= 是', '12', '13', 'zen_cfg_select_option(array(\'0\', \'1\'),', now());
 INSERT INTO configuration (configuration_title, configuration_key, configuration_value, configuration_description, configuration_group_id, sort_order, date_added) VALUES ('发送创建帐号电子邮件的复件到', 'SEND_EXTRA_CREATE_ACCOUNT_EMAILS_TO', '', '发送创建帐号电子邮件的复件到以下地址，格式为：名字一 &lt;email@address1&gt;, 名字二 &lt;email@address2&gt;', '12', '14', now());
@@ -2568,7 +2574,8 @@ INSERT INTO configuration (configuration_title, configuration_key, configuration
 
 INSERT INTO configuration (configuration_title, configuration_key, configuration_value, configuration_description, configuration_group_id, sort_order, set_function, date_added) VALUES ('打开GZip压缩', 'GZIP_LEVEL', '0', '0= 否 1= 是', '14', '1', 'zen_cfg_select_option(array(\'0\', \'1\'),', now());
 
-INSERT INTO configuration (configuration_title, configuration_key, configuration_value, configuration_description, configuration_group_id, sort_order, date_added) VALUES ('Sessions目录', 'SESSION_WRITE_DIRECTORY', '/tmp', '如果sessions是基于文件的，保存在该目录。', '15', '1', now());
+INSERT INTO configuration (configuration_title, configuration_key, configuration_value, configuration_description, configuration_group_id, sort_order, date_added) VALUES ('Session 目录', 'SESSION_WRITE_DIRECTORY', '/tmp', '指向 configure.php 文件中 DIR_FS_SQL_CACHE 设定的目录。', '15', '1', now());
+
 INSERT INTO configuration (configuration_title, configuration_key, configuration_value, configuration_description, configuration_group_id, sort_order, set_function, date_added) VALUES ('Cookie域名', 'SESSION_USE_FQDN', 'True', '如果选True，域名全称用于保存cookie, 例如：www.mydomain.com。如果选False，仅用域名的部分，例如：mydomain.com。如果您不确定，可以选True。', '15', '2', 'zen_cfg_select_option(array(\'True\', \'False\'), ', now());
 INSERT INTO configuration (configuration_title, configuration_key, configuration_value, configuration_description, configuration_group_id, sort_order, set_function, date_added) VALUES ('强制使用Cookie', 'SESSION_FORCE_COOKIE_USE', 'False', 'Force the use of sessions when cookies are only enabled.', '15', '2', 'zen_cfg_select_option(array(\'True\', \'False\'), ', now());
 INSERT INTO configuration (configuration_title, configuration_key, configuration_value, configuration_description, configuration_group_id, sort_order, set_function, date_added) VALUES ('检查SSL Sessions编号', 'SESSION_CHECK_SSL_SESSION_ID', 'False', 'Validate the SSL_SESSION_ID on every secure HTTPS page request.', '15', '3', 'zen_cfg_select_option(array(\'True\', \'False\'), ', now());
@@ -2692,7 +2699,7 @@ INSERT INTO configuration (configuration_title, configuration_key, configuration
 
 
 INSERT INTO configuration (configuration_title, configuration_key, configuration_value, configuration_description, configuration_group_id, sort_order, last_modified, date_added, use_function, set_function) VALUES ('栏目宽度 - 左栏目', 'BOX_WIDTH_LEFT', '170px', '左栏目边框的宽度<br />可以输入 px<br />缺省 = 150px', 19, 1, NULL, '2003-11-21 22:16:36', NULL, NULL);
-INSERT INTO configuration (configuration_title, configuration_key, configuration_value, configuration_description, configuration_group_id, sort_order, last_modified, date_added, use_function, set_function) VALUES ('栏目宽度 - 右栏目', 'BOX_WIDTH_RIGHT', '150px', '右栏目边框的宽度<br />可以输入 px<br />缺省 = 150px', 19, 2, NULL, '2003-11-21 22:16:36', NULL, NULL);
+INSERT INTO configuration (configuration_title, configuration_key, configuration_value, configuration_description, configuration_group_id, sort_order, last_modified, date_added, use_function, set_function) VALUES ('栏目宽度 - 右栏目', 'BOX_WIDTH_RIGHT', '140px', '右栏目边框的宽度<br />可以输入 px<br />缺省 = 150px', 19, 2, NULL, '2003-11-21 22:16:36', NULL, NULL);
 INSERT INTO configuration (configuration_title, configuration_key, configuration_value, configuration_description, configuration_group_id, sort_order, last_modified, date_added, use_function, set_function) VALUES ('导航条分割符', 'BREAD_CRUMBS_SEPARATOR', '&nbsp;::&nbsp;', '输入导航条分隔符<br />提示: 空格用 &amp;nbsp; <br />缺省 = &amp;nbsp;::&amp;nbsp;', 19, 3, NULL, '2003-11-21 22:16:36', NULL, 'zen_cfg_textarea_small(');
 
 
@@ -2711,7 +2718,7 @@ INSERT INTO configuration (configuration_title, configuration_key, configuration
 INSERT INTO configuration (configuration_title, configuration_key, configuration_value, configuration_description, configuration_group_id, sort_order, set_function, date_added) VALUES ('左边栏目状态 - 全局', 'COLUMN_LEFT_STATUS', '1', '显示左栏目, 除非有文件替代<br />0= 左栏目总是关闭<br />1= 左栏目打开，除非有文件替代', 19, 15, 'zen_cfg_select_option(array(\'0\', \'1\'), ', now());
 INSERT INTO configuration (configuration_title, configuration_key, configuration_value, configuration_description, configuration_group_id, sort_order, set_function, date_added) VALUES ('右边栏目状态 - 全局', 'COLUMN_RIGHT_STATUS', '1', '显示右栏目, 除非有文件替代<br />0= 右栏目总是关闭<br />1= 右栏目打开, 除非有文件替代', 19, 16, 'zen_cfg_select_option(array(\'0\', \'1\'), ', now());
 INSERT INTO configuration (configuration_title, configuration_key, configuration_value, configuration_description, configuration_group_id, sort_order, last_modified, date_added, use_function, set_function) VALUES ('栏目宽度 - 左', 'COLUMN_WIDTH_LEFT', '170px', '左边栏目的宽度<br />可以输入 px<br />缺省 = 150px', 19, 20, NULL, '2003-11-21 22:16:36', NULL, NULL);
-INSERT INTO configuration (configuration_title, configuration_key, configuration_value, configuration_description, configuration_group_id, sort_order, last_modified, date_added, use_function, set_function) VALUES ('栏目宽度 - 右', 'COLUMN_WIDTH_RIGHT', '150px', '右边栏目的宽度<br />可以输入 px<br />缺省 = 150px', 19, 21, NULL, '2003-11-21 22:16:36', NULL, NULL);
+INSERT INTO configuration (configuration_title, configuration_key, configuration_value, configuration_description, configuration_group_id, sort_order, last_modified, date_added, use_function, set_function) VALUES ('栏目宽度 - 右', 'COLUMN_WIDTH_RIGHT', '140px', '右边栏目的宽度<br />可以输入 px<br />缺省 = 150px', 19, 21, NULL, '2003-11-21 22:16:36', NULL, NULL);
 
 INSERT INTO configuration (configuration_title, configuration_key, configuration_value, configuration_description, configuration_group_id, sort_order, set_function, date_added) VALUES ('分类分割符', 'SHOW_CATEGORIES_SEPARATOR_LINK', '1', '分类名称之间显示分割符吗?<br />0= 否<br />1= 是', 19, 24, 'zen_cfg_select_option(array(\'0\', \'1\'), ', now());
 INSERT INTO configuration (configuration_title, configuration_key, configuration_value, configuration_description, configuration_group_id, sort_order, last_modified, date_added, use_function, set_function) VALUES ('分类名称和计数之间的分割符', 'CATEGORIES_SEPARATOR', '', '分类名称和计数间的分割符是?<br />缺省 = -&amp;gt;', 19, 25, NULL, '2003-11-21 22:16:36', NULL, 'zen_cfg_textarea_small(');
@@ -2742,7 +2749,7 @@ INSERT INTO configuration (configuration_title, configuration_key, configuration
 
 INSERT INTO configuration (configuration_title, configuration_key, configuration_value, configuration_description, configuration_group_id, sort_order, use_function, set_function, date_added) VALUES ('广告显示组 - 边框 banner_box_all', 'SHOW_BANNERS_GROUP_SET_ALL', 'BannersAll', '所有广告边框栏只可以设置一个广告组<br /><br />缺省组为 BannersAll<br /><br />在边框的所有广告栏，您要使用哪个广告组?<br />没有就留空', '19', '72', '', '', now());
 
-INSERT INTO configuration (configuration_title, configuration_key, configuration_value, configuration_description, configuration_group_id, sort_order, set_function, date_added) VALUES ('页脚 - 显示IP地址', 'SHOW_FOOTER_IP', '0', '在页脚显示客户IP地址吗<br />0= 否<br />1= 是', 19, 80, 'zen_cfg_select_option(array(\'0\', \'1\'), ', now());
+INSERT INTO configuration (configuration_title, configuration_key, configuration_value, configuration_description, configuration_group_id, sort_order, set_function, date_added) VALUES ('页脚 - 显示IP地址', 'SHOW_FOOTER_IP', '1', '在页脚显示客户IP地址吗<br />0= 否<br />1= 是', 19, 80, 'zen_cfg_select_option(array(\'0\', \'1\'), ', now());
 
 INSERT INTO configuration (configuration_title, configuration_key, configuration_value, configuration_description, configuration_group_id, sort_order, use_function, set_function, date_added) VALUES ('商品优惠数量 - 添加多少空白优惠?', 'DISCOUNT_QTY_ADD', '5', '在商品价格上添加多少空白优惠?', '19', '90', '', '', now());
 INSERT INTO configuration (configuration_title, configuration_key, configuration_value, configuration_description, configuration_group_id, sort_order, use_function, set_function, date_added) VALUES ('商品优惠数量 - 每行显示多少?', 'DISCOUNT_QUANTITY_PRICES_COLUMN', '5', '商品信息页面每行显示多少优惠?', '19', '95', '', '', now());
@@ -2913,7 +2920,7 @@ INSERT INTO configuration_group VALUES (25, '定义页面', '定义首页和其�
 INSERT INTO configuration_group VALUES (30, '简易页面设置', '简易页面设置', '30', '1');
 
 INSERT INTO currencies VALUES (1,'US Dollar','USD','$','','.',',','2','0.14205870', now());
-INSERT INTO currencies VALUES (2,'人民币','CNY','&yen;','元','.','','2','1.00000000', now());
+INSERT INTO currencies VALUES (2,'人民币','CNY','','元','.','','2','1.00000000', now());
 INSERT INTO currencies VALUES (3,'Euro','EUR','&euro;','','.',',','2','0.09692550', now());
 INSERT INTO currencies VALUES (4,'GB Pound','GBP','&pound;','','.',',','2','0.06997200', now());
 INSERT INTO currencies VALUES (5,'Canadian Dollar','CAD','$','','.',',','2','0.14287770', now());
@@ -2999,7 +3006,7 @@ INSERT INTO layout_boxes (layout_template, layout_box_name, layout_box_status, l
 INSERT INTO layout_boxes (layout_template, layout_box_name, layout_box_status, layout_box_location, layout_box_sort_order, layout_box_sort_order_single, layout_box_status_single) VALUES ('classic', 'whos_online.php', 1, 1, 200, 200, 1);
 
 INSERT INTO layout_boxes (layout_template, layout_box_name, layout_box_status, layout_box_location, layout_box_sort_order, layout_box_sort_order_single, layout_box_status_single) VALUES ('lite_blue', 'banner_box.php', 0, 0, 300, 1, 0);
-INSERT INTO layout_boxes (layout_template, layout_box_name, layout_box_status, layout_box_location, layout_box_sort_order, layout_box_sort_order_single, layout_box_status_single) VALUES ('lite_blue', 'banner_box2.php', 1, 1, 0, 0, 0);
+INSERT INTO layout_boxes (layout_template, layout_box_name, layout_box_status, layout_box_location, layout_box_sort_order, layout_box_sort_order_single, layout_box_status_single) VALUES ('lite_blue', 'banner_box2.php', 0, 1, 0, 0, 0);
 INSERT INTO layout_boxes (layout_template, layout_box_name, layout_box_status, layout_box_location, layout_box_sort_order, layout_box_sort_order_single, layout_box_status_single) VALUES ('lite_blue', 'banner_box_all.php', 0, 1, 0, 0, 0);
 INSERT INTO layout_boxes (layout_template, layout_box_name, layout_box_status, layout_box_location, layout_box_sort_order, layout_box_sort_order_single, layout_box_status_single) VALUES ('lite_blue', 'best_sellers.php', 1, 1, 30, 70, 1);
 INSERT INTO layout_boxes (layout_template, layout_box_name, layout_box_status, layout_box_location, layout_box_sort_order, layout_box_sort_order_single, layout_box_status_single) VALUES ('lite_blue', 'categories.php', 1, 0, 10, 10, 1);
@@ -3025,7 +3032,7 @@ INSERT INTO layout_boxes (layout_template, layout_box_name, layout_box_status, l
 INSERT INTO layout_boxes (layout_template, layout_box_name, layout_box_status, layout_box_location, layout_box_sort_order, layout_box_sort_order_single, layout_box_status_single) VALUES ('lite_blue', 'whos_online.php', 1, 1, 200, 200, 1);
 
 INSERT INTO layout_boxes (layout_template, layout_box_name, layout_box_status, layout_box_location, layout_box_sort_order, layout_box_sort_order_single, layout_box_status_single) VALUES ('lite_green', 'banner_box.php', 0, 0, 300, 1, 0);
-INSERT INTO layout_boxes (layout_template, layout_box_name, layout_box_status, layout_box_location, layout_box_sort_order, layout_box_sort_order_single, layout_box_status_single) VALUES ('lite_green', 'banner_box2.php', 1, 1, 0, 0, 0);
+INSERT INTO layout_boxes (layout_template, layout_box_name, layout_box_status, layout_box_location, layout_box_sort_order, layout_box_sort_order_single, layout_box_status_single) VALUES ('lite_green', 'banner_box2.php', 0, 1, 0, 0, 0);
 INSERT INTO layout_boxes (layout_template, layout_box_name, layout_box_status, layout_box_location, layout_box_sort_order, layout_box_sort_order_single, layout_box_status_single) VALUES ('lite_green', 'banner_box_all.php', 0, 1, 0, 0, 0);
 INSERT INTO layout_boxes (layout_template, layout_box_name, layout_box_status, layout_box_location, layout_box_sort_order, layout_box_sort_order_single, layout_box_status_single) VALUES ('lite_green', 'best_sellers.php', 1, 1, 30, 70, 1);
 INSERT INTO layout_boxes (layout_template, layout_box_name, layout_box_status, layout_box_location, layout_box_sort_order, layout_box_sort_order_single, layout_box_status_single) VALUES ('lite_green', 'categories.php', 1, 0, 10, 10, 1);
@@ -3051,7 +3058,7 @@ INSERT INTO layout_boxes (layout_template, layout_box_name, layout_box_status, l
 INSERT INTO layout_boxes (layout_template, layout_box_name, layout_box_status, layout_box_location, layout_box_sort_order, layout_box_sort_order_single, layout_box_status_single) VALUES ('lite_green', 'whos_online.php', 1, 1, 200, 200, 1);
 
 INSERT INTO layout_boxes (layout_template, layout_box_name, layout_box_status, layout_box_location, layout_box_sort_order, layout_box_sort_order_single, layout_box_status_single) VALUES ('lite_grey', 'banner_box.php', 0, 0, 300, 1, 0);
-INSERT INTO layout_boxes (layout_template, layout_box_name, layout_box_status, layout_box_location, layout_box_sort_order, layout_box_sort_order_single, layout_box_status_single) VALUES ('lite_grey', 'banner_box2.php', 1, 1, 0, 0, 0);
+INSERT INTO layout_boxes (layout_template, layout_box_name, layout_box_status, layout_box_location, layout_box_sort_order, layout_box_sort_order_single, layout_box_status_single) VALUES ('lite_grey', 'banner_box2.php', 0, 1, 0, 0, 0);
 INSERT INTO layout_boxes (layout_template, layout_box_name, layout_box_status, layout_box_location, layout_box_sort_order, layout_box_sort_order_single, layout_box_status_single) VALUES ('lite_grey', 'banner_box_all.php', 0, 1, 0, 0, 0);
 INSERT INTO layout_boxes (layout_template, layout_box_name, layout_box_status, layout_box_location, layout_box_sort_order, layout_box_sort_order_single, layout_box_status_single) VALUES ('lite_grey', 'best_sellers.php', 1, 1, 30, 70, 1);
 INSERT INTO layout_boxes (layout_template, layout_box_name, layout_box_status, layout_box_location, layout_box_sort_order, layout_box_sort_order_single, layout_box_status_single) VALUES ('lite_grey', 'categories.php', 1, 0, 10, 10, 1);
@@ -3077,7 +3084,7 @@ INSERT INTO layout_boxes (layout_template, layout_box_name, layout_box_status, l
 INSERT INTO layout_boxes (layout_template, layout_box_name, layout_box_status, layout_box_location, layout_box_sort_order, layout_box_sort_order_single, layout_box_status_single) VALUES ('lite_grey', 'whos_online.php', 1, 1, 200, 200, 1);
 
 INSERT INTO layout_boxes (layout_template, layout_box_name, layout_box_status, layout_box_location, layout_box_sort_order, layout_box_sort_order_single, layout_box_status_single) VALUES ('lite_orange', 'banner_box.php', 0, 0, 300, 1, 0);
-INSERT INTO layout_boxes (layout_template, layout_box_name, layout_box_status, layout_box_location, layout_box_sort_order, layout_box_sort_order_single, layout_box_status_single) VALUES ('lite_orange', 'banner_box2.php', 1, 1, 0, 0, 0);
+INSERT INTO layout_boxes (layout_template, layout_box_name, layout_box_status, layout_box_location, layout_box_sort_order, layout_box_sort_order_single, layout_box_status_single) VALUES ('lite_orange', 'banner_box2.php', 0, 1, 0, 0, 0);
 INSERT INTO layout_boxes (layout_template, layout_box_name, layout_box_status, layout_box_location, layout_box_sort_order, layout_box_sort_order_single, layout_box_status_single) VALUES ('lite_orange', 'banner_box_all.php', 0, 1, 0, 0, 0);
 INSERT INTO layout_boxes (layout_template, layout_box_name, layout_box_status, layout_box_location, layout_box_sort_order, layout_box_sort_order_single, layout_box_status_single) VALUES ('lite_orange', 'best_sellers.php', 1, 1, 30, 70, 1);
 INSERT INTO layout_boxes (layout_template, layout_box_name, layout_box_status, layout_box_location, layout_box_sort_order, layout_box_sort_order_single, layout_box_status_single) VALUES ('lite_orange', 'categories.php', 1, 0, 10, 10, 1);
@@ -3103,7 +3110,7 @@ INSERT INTO layout_boxes (layout_template, layout_box_name, layout_box_status, l
 INSERT INTO layout_boxes (layout_template, layout_box_name, layout_box_status, layout_box_location, layout_box_sort_order, layout_box_sort_order_single, layout_box_status_single) VALUES ('lite_orange', 'whos_online.php', 1, 1, 200, 200, 1);
 
 INSERT INTO layout_boxes (layout_template, layout_box_name, layout_box_status, layout_box_location, layout_box_sort_order, layout_box_sort_order_single, layout_box_status_single) VALUES ('lite_red', 'banner_box.php', 0, 0, 300, 1, 0);
-INSERT INTO layout_boxes (layout_template, layout_box_name, layout_box_status, layout_box_location, layout_box_sort_order, layout_box_sort_order_single, layout_box_status_single) VALUES ('lite_red', 'banner_box2.php', 1, 1, 0, 0, 0);
+INSERT INTO layout_boxes (layout_template, layout_box_name, layout_box_status, layout_box_location, layout_box_sort_order, layout_box_sort_order_single, layout_box_status_single) VALUES ('lite_red', 'banner_box2.php', 0, 1, 0, 0, 0);
 INSERT INTO layout_boxes (layout_template, layout_box_name, layout_box_status, layout_box_location, layout_box_sort_order, layout_box_sort_order_single, layout_box_status_single) VALUES ('lite_red', 'banner_box_all.php', 0, 1, 0, 0, 0);
 INSERT INTO layout_boxes (layout_template, layout_box_name, layout_box_status, layout_box_location, layout_box_sort_order, layout_box_sort_order_single, layout_box_status_single) VALUES ('lite_red', 'best_sellers.php', 1, 1, 30, 70, 1);
 INSERT INTO layout_boxes (layout_template, layout_box_name, layout_box_status, layout_box_location, layout_box_sort_order, layout_box_sort_order_single, layout_box_status_single) VALUES ('lite_red', 'categories.php', 1, 0, 10, 10, 1);
@@ -3129,7 +3136,7 @@ INSERT INTO layout_boxes (layout_template, layout_box_name, layout_box_status, l
 INSERT INTO layout_boxes (layout_template, layout_box_name, layout_box_status, layout_box_location, layout_box_sort_order, layout_box_sort_order_single, layout_box_status_single) VALUES ('lite_red', 'whos_online.php', 1, 1, 200, 200, 1);
 
 INSERT INTO layout_boxes (layout_template, layout_box_name, layout_box_status, layout_box_location, layout_box_sort_order, layout_box_sort_order_single, layout_box_status_single) VALUES ('pure_black_free', 'banner_box.php', 0, 0, 300, 1, 0);
-INSERT INTO layout_boxes (layout_template, layout_box_name, layout_box_status, layout_box_location, layout_box_sort_order, layout_box_sort_order_single, layout_box_status_single) VALUES ('pure_black_free', 'banner_box2.php', 1, 1, 0, 0, 0);
+INSERT INTO layout_boxes (layout_template, layout_box_name, layout_box_status, layout_box_location, layout_box_sort_order, layout_box_sort_order_single, layout_box_status_single) VALUES ('pure_black_free', 'banner_box2.php', 0, 1, 0, 0, 0);
 INSERT INTO layout_boxes (layout_template, layout_box_name, layout_box_status, layout_box_location, layout_box_sort_order, layout_box_sort_order_single, layout_box_status_single) VALUES ('pure_black_free', 'banner_box_all.php', 0, 1, 0, 0, 0);
 INSERT INTO layout_boxes (layout_template, layout_box_name, layout_box_status, layout_box_location, layout_box_sort_order, layout_box_sort_order_single, layout_box_status_single) VALUES ('pure_black_free', 'best_sellers.php', 1, 1, 30, 70, 1);
 INSERT INTO layout_boxes (layout_template, layout_box_name, layout_box_status, layout_box_location, layout_box_sort_order, layout_box_sort_order_single, layout_box_status_single) VALUES ('pure_black_free', 'categories.php', 1, 0, 10, 10, 1);
@@ -3155,7 +3162,7 @@ INSERT INTO layout_boxes (layout_template, layout_box_name, layout_box_status, l
 INSERT INTO layout_boxes (layout_template, layout_box_name, layout_box_status, layout_box_location, layout_box_sort_order, layout_box_sort_order_single, layout_box_status_single) VALUES ('pure_black_free', 'whos_online.php', 1, 1, 200, 200, 1);
 
 INSERT INTO layout_boxes (layout_template, layout_box_name, layout_box_status, layout_box_location, layout_box_sort_order, layout_box_sort_order_single, layout_box_status_single) VALUES ('pure_blue_free', 'banner_box.php', 0, 0, 300, 1, 0);
-INSERT INTO layout_boxes (layout_template, layout_box_name, layout_box_status, layout_box_location, layout_box_sort_order, layout_box_sort_order_single, layout_box_status_single) VALUES ('pure_blue_free', 'banner_box2.php', 1, 1, 0, 0, 0);
+INSERT INTO layout_boxes (layout_template, layout_box_name, layout_box_status, layout_box_location, layout_box_sort_order, layout_box_sort_order_single, layout_box_status_single) VALUES ('pure_blue_free', 'banner_box2.php', 0, 1, 0, 0, 0);
 INSERT INTO layout_boxes (layout_template, layout_box_name, layout_box_status, layout_box_location, layout_box_sort_order, layout_box_sort_order_single, layout_box_status_single) VALUES ('pure_blue_free', 'banner_box_all.php', 0, 1, 0, 0, 0);
 INSERT INTO layout_boxes (layout_template, layout_box_name, layout_box_status, layout_box_location, layout_box_sort_order, layout_box_sort_order_single, layout_box_status_single) VALUES ('pure_blue_free', 'best_sellers.php', 1, 1, 30, 70, 1);
 INSERT INTO layout_boxes (layout_template, layout_box_name, layout_box_status, layout_box_location, layout_box_sort_order, layout_box_sort_order_single, layout_box_status_single) VALUES ('pure_blue_free', 'categories.php', 1, 0, 10, 10, 1);
@@ -3181,7 +3188,7 @@ INSERT INTO layout_boxes (layout_template, layout_box_name, layout_box_status, l
 INSERT INTO layout_boxes (layout_template, layout_box_name, layout_box_status, layout_box_location, layout_box_sort_order, layout_box_sort_order_single, layout_box_status_single) VALUES ('pure_blue_free', 'whos_online.php', 1, 1, 200, 200, 1);
 
 INSERT INTO layout_boxes (layout_template, layout_box_name, layout_box_status, layout_box_location, layout_box_sort_order, layout_box_sort_order_single, layout_box_status_single) VALUES ('pure_green_free', 'banner_box.php', 0, 0, 300, 1, 0);
-INSERT INTO layout_boxes (layout_template, layout_box_name, layout_box_status, layout_box_location, layout_box_sort_order, layout_box_sort_order_single, layout_box_status_single) VALUES ('pure_green_free', 'banner_box2.php', 1, 1, 0, 0, 0);
+INSERT INTO layout_boxes (layout_template, layout_box_name, layout_box_status, layout_box_location, layout_box_sort_order, layout_box_sort_order_single, layout_box_status_single) VALUES ('pure_green_free', 'banner_box2.php', 0, 1, 0, 0, 0);
 INSERT INTO layout_boxes (layout_template, layout_box_name, layout_box_status, layout_box_location, layout_box_sort_order, layout_box_sort_order_single, layout_box_status_single) VALUES ('pure_green_free', 'banner_box_all.php', 0, 1, 0, 0, 0);
 INSERT INTO layout_boxes (layout_template, layout_box_name, layout_box_status, layout_box_location, layout_box_sort_order, layout_box_sort_order_single, layout_box_status_single) VALUES ('pure_green_free', 'best_sellers.php', 1, 1, 30, 70, 1);
 INSERT INTO layout_boxes (layout_template, layout_box_name, layout_box_status, layout_box_location, layout_box_sort_order, layout_box_sort_order_single, layout_box_status_single) VALUES ('pure_green_free', 'categories.php', 1, 0, 10, 10, 1);
@@ -3207,7 +3214,7 @@ INSERT INTO layout_boxes (layout_template, layout_box_name, layout_box_status, l
 INSERT INTO layout_boxes (layout_template, layout_box_name, layout_box_status, layout_box_location, layout_box_sort_order, layout_box_sort_order_single, layout_box_status_single) VALUES ('pure_green_free', 'whos_online.php', 1, 1, 200, 200, 1);
 
 INSERT INTO layout_boxes (layout_template, layout_box_name, layout_box_status, layout_box_location, layout_box_sort_order, layout_box_sort_order_single, layout_box_status_single) VALUES ('pure_orange_free', 'banner_box.php', 0, 0, 300, 1, 0);
-INSERT INTO layout_boxes (layout_template, layout_box_name, layout_box_status, layout_box_location, layout_box_sort_order, layout_box_sort_order_single, layout_box_status_single) VALUES ('pure_orange_free', 'banner_box2.php', 1, 1, 0, 0, 0);
+INSERT INTO layout_boxes (layout_template, layout_box_name, layout_box_status, layout_box_location, layout_box_sort_order, layout_box_sort_order_single, layout_box_status_single) VALUES ('pure_orange_free', 'banner_box2.php', 0, 1, 0, 0, 0);
 INSERT INTO layout_boxes (layout_template, layout_box_name, layout_box_status, layout_box_location, layout_box_sort_order, layout_box_sort_order_single, layout_box_status_single) VALUES ('pure_orange_free', 'banner_box_all.php', 0, 1, 0, 0, 0);
 INSERT INTO layout_boxes (layout_template, layout_box_name, layout_box_status, layout_box_location, layout_box_sort_order, layout_box_sort_order_single, layout_box_status_single) VALUES ('pure_orange_free', 'best_sellers.php', 1, 1, 30, 70, 1);
 INSERT INTO layout_boxes (layout_template, layout_box_name, layout_box_status, layout_box_location, layout_box_sort_order, layout_box_sort_order_single, layout_box_status_single) VALUES ('pure_orange_free', 'categories.php', 1, 0, 10, 10, 1);
@@ -3233,7 +3240,7 @@ INSERT INTO layout_boxes (layout_template, layout_box_name, layout_box_status, l
 INSERT INTO layout_boxes (layout_template, layout_box_name, layout_box_status, layout_box_location, layout_box_sort_order, layout_box_sort_order_single, layout_box_status_single) VALUES ('pure_orange_free', 'whos_online.php', 1, 1, 200, 200, 1);
 
 INSERT INTO layout_boxes (layout_template, layout_box_name, layout_box_status, layout_box_location, layout_box_sort_order, layout_box_sort_order_single, layout_box_status_single) VALUES ('pure_red_free', 'banner_box.php', 0, 0, 300, 1, 0);
-INSERT INTO layout_boxes (layout_template, layout_box_name, layout_box_status, layout_box_location, layout_box_sort_order, layout_box_sort_order_single, layout_box_status_single) VALUES ('pure_red_free', 'banner_box2.php', 1, 1, 0, 0, 0);
+INSERT INTO layout_boxes (layout_template, layout_box_name, layout_box_status, layout_box_location, layout_box_sort_order, layout_box_sort_order_single, layout_box_status_single) VALUES ('pure_red_free', 'banner_box2.php', 0, 1, 0, 0, 0);
 INSERT INTO layout_boxes (layout_template, layout_box_name, layout_box_status, layout_box_location, layout_box_sort_order, layout_box_sort_order_single, layout_box_status_single) VALUES ('pure_red_free', 'banner_box_all.php', 0, 1, 0, 0, 0);
 INSERT INTO layout_boxes (layout_template, layout_box_name, layout_box_status, layout_box_location, layout_box_sort_order, layout_box_sort_order_single, layout_box_status_single) VALUES ('pure_red_free', 'best_sellers.php', 1, 1, 30, 70, 1);
 INSERT INTO layout_boxes (layout_template, layout_box_name, layout_box_status, layout_box_location, layout_box_sort_order, layout_box_sort_order_single, layout_box_status_single) VALUES ('pure_red_free', 'categories.php', 1, 0, 10, 10, 1);
@@ -3259,7 +3266,7 @@ INSERT INTO layout_boxes (layout_template, layout_box_name, layout_box_status, l
 INSERT INTO layout_boxes (layout_template, layout_box_name, layout_box_status, layout_box_location, layout_box_sort_order, layout_box_sort_order_single, layout_box_status_single) VALUES ('pure_red_free', 'whos_online.php', 1, 1, 200, 200, 1);
 
 INSERT INTO layout_boxes (layout_template, layout_box_name, layout_box_status, layout_box_location, layout_box_sort_order, layout_box_sort_order_single, layout_box_status_single) VALUES ('abagon', 'banner_box.php', 0, 0, 300, 1, 0);
-INSERT INTO layout_boxes (layout_template, layout_box_name, layout_box_status, layout_box_location, layout_box_sort_order, layout_box_sort_order_single, layout_box_status_single) VALUES ('abagon', 'banner_box2.php', 1, 1, 0, 0, 0);
+INSERT INTO layout_boxes (layout_template, layout_box_name, layout_box_status, layout_box_location, layout_box_sort_order, layout_box_sort_order_single, layout_box_status_single) VALUES ('abagon', 'banner_box2.php', 0, 1, 0, 0, 0);
 INSERT INTO layout_boxes (layout_template, layout_box_name, layout_box_status, layout_box_location, layout_box_sort_order, layout_box_sort_order_single, layout_box_status_single) VALUES ('abagon', 'banner_box_all.php', 0, 1, 0, 0, 0);
 INSERT INTO layout_boxes (layout_template, layout_box_name, layout_box_status, layout_box_location, layout_box_sort_order, layout_box_sort_order_single, layout_box_status_single) VALUES ('abagon', 'best_sellers.php', 1, 1, 30, 70, 1);
 INSERT INTO layout_boxes (layout_template, layout_box_name, layout_box_status, layout_box_location, layout_box_sort_order, layout_box_sort_order_single, layout_box_status_single) VALUES ('abagon', 'categories.php', 1, 0, 10, 10, 1);
@@ -3285,7 +3292,7 @@ INSERT INTO layout_boxes (layout_template, layout_box_name, layout_box_status, l
 INSERT INTO layout_boxes (layout_template, layout_box_name, layout_box_status, layout_box_location, layout_box_sort_order, layout_box_sort_order_single, layout_box_status_single) VALUES ('abagon', 'whos_online.php', 1, 1, 200, 200, 1);
 
 INSERT INTO layout_boxes (layout_template, layout_box_name, layout_box_status, layout_box_location, layout_box_sort_order, layout_box_sort_order_single, layout_box_status_single) VALUES ('crista_blue', 'banner_box.php', 0, 0, 300, 1, 0);
-INSERT INTO layout_boxes (layout_template, layout_box_name, layout_box_status, layout_box_location, layout_box_sort_order, layout_box_sort_order_single, layout_box_status_single) VALUES ('crista_blue', 'banner_box2.php', 1, 1, 0, 0, 0);
+INSERT INTO layout_boxes (layout_template, layout_box_name, layout_box_status, layout_box_location, layout_box_sort_order, layout_box_sort_order_single, layout_box_status_single) VALUES ('crista_blue', 'banner_box2.php', 0, 1, 0, 0, 0);
 INSERT INTO layout_boxes (layout_template, layout_box_name, layout_box_status, layout_box_location, layout_box_sort_order, layout_box_sort_order_single, layout_box_status_single) VALUES ('crista_blue', 'banner_box_all.php', 0, 1, 0, 0, 0);
 INSERT INTO layout_boxes (layout_template, layout_box_name, layout_box_status, layout_box_location, layout_box_sort_order, layout_box_sort_order_single, layout_box_status_single) VALUES ('crista_blue', 'best_sellers.php', 1, 1, 30, 70, 1);
 INSERT INTO layout_boxes (layout_template, layout_box_name, layout_box_status, layout_box_location, layout_box_sort_order, layout_box_sort_order_single, layout_box_status_single) VALUES ('crista_blue', 'categories.php', 1, 0, 10, 10, 1);
@@ -3311,7 +3318,7 @@ INSERT INTO layout_boxes (layout_template, layout_box_name, layout_box_status, l
 INSERT INTO layout_boxes (layout_template, layout_box_name, layout_box_status, layout_box_location, layout_box_sort_order, layout_box_sort_order_single, layout_box_status_single) VALUES ('crista_blue', 'whos_online.php', 1, 1, 200, 200, 1);
 
 INSERT INTO layout_boxes (layout_template, layout_box_name, layout_box_status, layout_box_location, layout_box_sort_order, layout_box_sort_order_single, layout_box_status_single) VALUES ('crista_grey', 'banner_box.php', 0, 0, 300, 1, 0);
-INSERT INTO layout_boxes (layout_template, layout_box_name, layout_box_status, layout_box_location, layout_box_sort_order, layout_box_sort_order_single, layout_box_status_single) VALUES ('crista_grey', 'banner_box2.php', 1, 1, 0, 0, 0);
+INSERT INTO layout_boxes (layout_template, layout_box_name, layout_box_status, layout_box_location, layout_box_sort_order, layout_box_sort_order_single, layout_box_status_single) VALUES ('crista_grey', 'banner_box2.php', 0, 1, 0, 0, 0);
 INSERT INTO layout_boxes (layout_template, layout_box_name, layout_box_status, layout_box_location, layout_box_sort_order, layout_box_sort_order_single, layout_box_status_single) VALUES ('crista_grey', 'banner_box_all.php', 0, 1, 0, 0, 0);
 INSERT INTO layout_boxes (layout_template, layout_box_name, layout_box_status, layout_box_location, layout_box_sort_order, layout_box_sort_order_single, layout_box_status_single) VALUES ('crista_grey', 'best_sellers.php', 1, 1, 30, 70, 1);
 INSERT INTO layout_boxes (layout_template, layout_box_name, layout_box_status, layout_box_location, layout_box_sort_order, layout_box_sort_order_single, layout_box_status_single) VALUES ('crista_grey', 'categories.php', 1, 0, 10, 10, 1);
@@ -3337,7 +3344,7 @@ INSERT INTO layout_boxes (layout_template, layout_box_name, layout_box_status, l
 INSERT INTO layout_boxes (layout_template, layout_box_name, layout_box_status, layout_box_location, layout_box_sort_order, layout_box_sort_order_single, layout_box_status_single) VALUES ('crista_grey', 'whos_online.php', 1, 1, 200, 200, 1);
 
 INSERT INTO layout_boxes (layout_template, layout_box_name, layout_box_status, layout_box_location, layout_box_sort_order, layout_box_sort_order_single, layout_box_status_single) VALUES ('crista_pink', 'banner_box.php', 0, 0, 300, 1, 0);
-INSERT INTO layout_boxes (layout_template, layout_box_name, layout_box_status, layout_box_location, layout_box_sort_order, layout_box_sort_order_single, layout_box_status_single) VALUES ('crista_pink', 'banner_box2.php', 1, 1, 0, 0, 0);
+INSERT INTO layout_boxes (layout_template, layout_box_name, layout_box_status, layout_box_location, layout_box_sort_order, layout_box_sort_order_single, layout_box_status_single) VALUES ('crista_pink', 'banner_box2.php', 0, 1, 0, 0, 0);
 INSERT INTO layout_boxes (layout_template, layout_box_name, layout_box_status, layout_box_location, layout_box_sort_order, layout_box_sort_order_single, layout_box_status_single) VALUES ('crista_pink', 'banner_box_all.php', 0, 1, 0, 0, 0);
 INSERT INTO layout_boxes (layout_template, layout_box_name, layout_box_status, layout_box_location, layout_box_sort_order, layout_box_sort_order_single, layout_box_status_single) VALUES ('crista_pink', 'best_sellers.php', 1, 1, 30, 70, 1);
 INSERT INTO layout_boxes (layout_template, layout_box_name, layout_box_status, layout_box_location, layout_box_sort_order, layout_box_sort_order_single, layout_box_status_single) VALUES ('crista_pink', 'categories.php', 1, 0, 10, 10, 1);
@@ -3363,7 +3370,7 @@ INSERT INTO layout_boxes (layout_template, layout_box_name, layout_box_status, l
 INSERT INTO layout_boxes (layout_template, layout_box_name, layout_box_status, layout_box_location, layout_box_sort_order, layout_box_sort_order_single, layout_box_status_single) VALUES ('crista_pink', 'whos_online.php', 1, 1, 200, 200, 1);
 
 INSERT INTO layout_boxes (layout_template, layout_box_name, layout_box_status, layout_box_location, layout_box_sort_order, layout_box_sort_order_single, layout_box_status_single) VALUES ('crista_violet', 'banner_box.php', 0, 0, 300, 1, 0);
-INSERT INTO layout_boxes (layout_template, layout_box_name, layout_box_status, layout_box_location, layout_box_sort_order, layout_box_sort_order_single, layout_box_status_single) VALUES ('crista_violet', 'banner_box2.php', 1, 1, 0, 0, 0);
+INSERT INTO layout_boxes (layout_template, layout_box_name, layout_box_status, layout_box_location, layout_box_sort_order, layout_box_sort_order_single, layout_box_status_single) VALUES ('crista_violet', 'banner_box2.php', 0, 1, 0, 0, 0);
 INSERT INTO layout_boxes (layout_template, layout_box_name, layout_box_status, layout_box_location, layout_box_sort_order, layout_box_sort_order_single, layout_box_status_single) VALUES ('crista_violet', 'banner_box_all.php', 0, 1, 0, 0, 0);
 INSERT INTO layout_boxes (layout_template, layout_box_name, layout_box_status, layout_box_location, layout_box_sort_order, layout_box_sort_order_single, layout_box_status_single) VALUES ('crista_violet', 'best_sellers.php', 1, 1, 30, 70, 1);
 INSERT INTO layout_boxes (layout_template, layout_box_name, layout_box_status, layout_box_location, layout_box_sort_order, layout_box_sort_order_single, layout_box_status_single) VALUES ('crista_violet', 'categories.php', 1, 0, 10, 10, 1);
@@ -3622,10 +3629,10 @@ INSERT INTO get_terms_to_filter VALUES ('record_company_id', 'TABLE_RECORD_COMPA
 # Dumping data for table project_version
 #
 
-INSERT INTO project_version (project_version_id, project_version_key, project_version_major, project_version_minor, project_version_patch1, project_version_patch1_source, project_version_patch2, project_version_patch2_source, project_version_comment, project_version_date_applied) VALUES (1, 'Zen-Cart Main', '1', '5.1', '', '', '', '', 'New Installation', now());
-INSERT INTO project_version (project_version_id, project_version_key, project_version_major, project_version_minor, project_version_patch1, project_version_patch1_source, project_version_patch2, project_version_patch2_source, project_version_comment, project_version_date_applied) VALUES (2, 'Zen-Cart Database', '1', '5.1', '', '', '', '', 'New Installation', now());
-INSERT INTO project_version_history (project_version_id, project_version_key, project_version_major, project_version_minor, project_version_patch, project_version_comment, project_version_date_applied) VALUES (1, 'Zen-Cart Main', '1', '5.1', '', 'New Installation', now());
-INSERT INTO project_version_history (project_version_id, project_version_key, project_version_major, project_version_minor, project_version_patch, project_version_comment, project_version_date_applied) VALUES (2, 'Zen-Cart Database', '1', '5.1', '', 'New Installation', now());
+INSERT INTO project_version (project_version_id, project_version_key, project_version_major, project_version_minor, project_version_patch1, project_version_patch1_source, project_version_patch2, project_version_patch2_source, project_version_comment, project_version_date_applied) VALUES (1, 'Zen-Cart Main', '1', '5.4', '', '', '', '', 'New Installation', now());
+INSERT INTO project_version (project_version_id, project_version_key, project_version_major, project_version_minor, project_version_patch1, project_version_patch1_source, project_version_patch2, project_version_patch2_source, project_version_comment, project_version_date_applied) VALUES (2, 'Zen-Cart Database', '1', '5.4', '', '', '', '', 'New Installation', now());
+INSERT INTO project_version_history (project_version_id, project_version_key, project_version_major, project_version_minor, project_version_patch, project_version_comment, project_version_date_applied) VALUES (1, 'Zen-Cart Main', '1', '5.4', '', 'New Installation', now());
+INSERT INTO project_version_history (project_version_id, project_version_key, project_version_major, project_version_minor, project_version_patch, project_version_comment, project_version_date_applied) VALUES (2, 'Zen-Cart Database', '1', '5.4', '', 'New Installation', now());
 
 #
 # Easy Populate 批量商品管理模块
@@ -3641,11 +3648,18 @@ INSERT INTO configuration VALUES (NULL, '上传目录', 'EASYPOPULATE_CONFIG_TEM
 # Column Layout 多栏商品列表模块
 #
 
-INSERT INTO configuration (configuration_title, configuration_key, configuration_value, configuration_description, configuration_group_id, sort_order, last_modified, date_added, use_function, set_function) VALUES ('商品列表 - 排列方式', 'PRODUCT_LISTING_LAYOUT_STYLE', 'rows', '选择排列方式:<br />每个产品一行(rows) 还是每行显示多个产品(columns)<br />如果允许顾客自己选择排列方式，这里设定默认值。', '8', '40', NULL, now(), NULL, 'zen_cfg_select_option(array(\'rows\', \'columns\'),');
+delete from configuration where configuration_key in ('PRODUCT_LISTING_LAYOUT_STYLE');
+delete from configuration where configuration_key in ('PRODUCT_LISTING_COLUMNS_PER_ROW');
+delete from configuration where configuration_key in ('PRODUCT_LISTING_LAYOUT_STYLE_CUSTOMER');
+delete from configuration where configuration_key in ('PRODUCT_LISTING_GRID_SORT');
 
-INSERT INTO configuration (configuration_title, configuration_key, configuration_value, configuration_description, configuration_group_id, sort_order, last_modified, date_added, use_function, set_function) VALUES ('商品列表 - 每行列数', 'PRODUCT_LISTING_COLUMNS_PER_ROW', '3', '选择商品列表中每行显示的商品数目，缺省为3', '8', '41', NULL, now(), NULL, NULL);
+INSERT INTO configuration (configuration_title, configuration_key, configuration_value, configuration_description, configuration_group_id, sort_order, last_modified, date_added, use_function, set_function) VALUES ('商品列表 - 排列方式', 'PRODUCT_LISTING_LAYOUT_STYLE', 'rows', '选择排列方式:<br />每个产品一行(rows) 还是每行显示多个产品(columns)<br />如果允许顾客自己选择排列方式，这里设定默认值。', '8', '41', NULL, now(), NULL, 'zen_cfg_select_option(array(\'rows\', \'columns\'),');
+
+INSERT INTO configuration (configuration_title, configuration_key, configuration_value, configuration_description, configuration_group_id, sort_order, last_modified, date_added, use_function, set_function) VALUES ('商品列表 - 每行列数', 'PRODUCT_LISTING_COLUMNS_PER_ROW', '3', '选择商品列表中每行显示的商品数目，缺省为3', '8', '42', NULL, now(), NULL, NULL);
 			   
-INSERT INTO configuration (configuration_title, configuration_key, configuration_value, configuration_description, configuration_group_id, sort_order, last_modified, date_added, use_function, set_function) VALUES ('商品列表 - 排列方式 - 顾客控制', 'PRODUCT_LISTING_LAYOUT_STYLE_CUSTOMER', '1', '是否允许顾客自己选择排列方式 (1=是, 0=否):', '8', '42', NULL, now(), NULL, 'zen_cfg_select_option(array(\'0\', \'1\'),');
+INSERT INTO configuration (configuration_title, configuration_key, configuration_value, configuration_description, configuration_group_id, sort_order, last_modified, date_added, use_function, set_function) VALUES ('商品列表 - 排列方式 - 顾客控制', 'PRODUCT_LISTING_LAYOUT_STYLE_CUSTOMER', '0', '是否允许顾客选择排列方式 (0=否, 1=是):', '8', '43', NULL, now(), NULL, 'zen_cfg_select_option(array(\'0\', \'1\'),');
+
+INSERT INTO configuration (configuration_title, configuration_key, configuration_value, configuration_description, configuration_group_id, sort_order, last_modified, date_added, use_function, set_function) VALUES ('商品列表 - 显示排序', 'PRODUCT_LISTING_GRID_SORT', '0', '是否允许顾客选择排序 (0=否, 1=是):', '8', '44', NULL, now(), NULL, 'zen_cfg_select_option(array(\'0\', \'1\'),');
 
 #
 # Zen Lightbox / 图片展示模块

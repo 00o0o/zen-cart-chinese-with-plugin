@@ -1,7 +1,7 @@
 <?php
-/**
+/**IH4-1
  * ih_manager.php
- * manager module for IH2 admin interface
+ * manager module for IH4 admin interface
  *
  * @author  Tim Kroeger (original author)
  * @copyright Copyright 2005-2006
@@ -14,7 +14,7 @@
     $current_category_id = (isset($_GET['current_category_id']) ? $_GET['current_category_id'] : $current_category_id);
     $new_product_query = $db->Execute("select ptc.* from " . TABLE_PRODUCTS_TO_CATEGORIES . " ptc  left join " . TABLE_PRODUCTS_DESCRIPTION . " pd on ptc.products_id = pd.products_id and pd.language_id = '" . (int)$_SESSION['languages_id'] . "' where ptc.categories_id='" . $current_category_id . "' order by pd.products_name");
     $products_filter = $new_product_query->fields['products_id'];
-    zen_redirect(zen_href_link(FILENAME_IMAGE_HANDLER, 'page=manager&products_filter=' . $products_filter . '&current_category_id=' . $current_category_id));
+    zen_redirect(zen_href_link(FILENAME_IMAGE_HANDLER, 'page=manager&amp;products_filter=' . $products_filter . '&amp;current_category_id=' . $current_category_id));
   }
   
   // set categories and products if not set
@@ -22,7 +22,7 @@
     $new_product_query = $db->Execute("select ptc.* from " . TABLE_PRODUCTS_TO_CATEGORIES . " ptc  left join " . TABLE_PRODUCTS_DESCRIPTION . " pd on ptc.products_id = pd.products_id and pd.language_id = '" . (int)$_SESSION['languages_id'] . "' where ptc.categories_id='" . $current_category_id . "' order by pd.products_name");
     $products_filter = $new_product_query->fields['products_id'];
     if ($products_filter != '') {
-      zen_redirect(zen_href_link(FILENAME_IMAGE_HANDLER, 'page=manager&products_filter=' . $products_filter . '&current_category_id=' . $current_category_id));
+      zen_redirect(zen_href_link(FILENAME_IMAGE_HANDLER, 'page=manager&amp;products_filter=' . $products_filter . '&amp;current_category_id=' . $current_category_id));
     }
   } else {
     if ($products_filter == '' and $current_categories_id == '') {
@@ -286,7 +286,7 @@
       // could not find file to delete
       $messageStack->add_session(TEXT_MSG_IMAGE_NOT_FOUND, 'error');
     }
-    zen_redirect(zen_href_link(FILENAME_IMAGE_HANDLER, 'products_filter=' . $_GET['products_filter'] . '&current_category_id=' . $current_category_id));
+    zen_redirect(zen_href_link(FILENAME_IMAGE_HANDLER, 'products_filter=' . $_GET['products_filter'] . '&amp;current_category_id=' . $current_category_id));
   }
 
 
@@ -353,11 +353,11 @@
         $messageStack->add(TEXT_MSG_INVALID_SQL, "error");
       }
     }
-    zen_redirect(zen_href_link(FILENAME_IMAGE_HANDLER, 'products_filter=' . $_GET['products_filter'] . '&current_category_id=' . $current_category_id));
+    zen_redirect(zen_href_link(FILENAME_IMAGE_HANDLER, 'products_filter=' . $_GET['products_filter'] . '&amp;current_category_id=' . $current_category_id));
   }
 
   if ($action == 'cancel') {
     // set edit message
     $messageStack->add_session(PRODUCT_WARNING_UPDATE_CANCEL, 'warning');
-    zen_redirect(zen_href_link(FILENAME_IMAGE_HANDLER, 'products_filter=' . $_GET['products_filter'] . '&current_category_id=' . $current_category_id));
+    zen_redirect(zen_href_link(FILENAME_IMAGE_HANDLER, 'products_filter=' . $_GET['products_filter'] . '&amp;current_category_id=' . $current_category_id));
   }

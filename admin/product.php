@@ -12,10 +12,10 @@
   require(DIR_WS_MODULES . 'prod_cat_header_code.php');
 
   $action = (isset($_GET['action']) ? $_GET['action'] : '');
-    // Ultimate SEO URLs v2.200
+
 	// If the action will affect the cache entries
 	if (preg_match("/(insert|update|setflag)/i", $action)) {
-		include_once(DIR_WS_INCLUDES . 'reset_seo_cache.php');
+		usu_reset_cache_data('true');
 	}
 
   if (zen_not_null($action)) {

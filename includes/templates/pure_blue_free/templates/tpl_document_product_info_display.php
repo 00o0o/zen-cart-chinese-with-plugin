@@ -8,7 +8,7 @@
  * Displays template according to "document-product" product-type needs
  *
  * @package templateSystem
- * @copyright Copyright 2003-2006 Zen Cart Development Team
+ * @copyright Copyright 2003-2014 Zen Cart Development Team
  * @copyright Portions Copyright 2003 osCommerce
  * @license http://www.zen-cart.com/license/2_0.txt GNU Public License V2.0
  * @version $Id: tpl_document_product_info_display.php 5369 2006-12-23 10:55:52Z drbyte $
@@ -62,7 +62,7 @@ require($template->get_template_dir('/tpl_products_next_previous.php',DIR_WS_TEM
 <!--eof Main Product Image-->
 
 <!--bof Product Price block -->
-<span id="productPrices" class="docProduct">
+<h2 id="productPrices" class="docProduct">
 <?php
 // base price
   if ($show_onetime_charges_description == 'true') {
@@ -71,7 +71,7 @@ require($template->get_template_dir('/tpl_products_next_previous.php',DIR_WS_TEM
     $one_time = '';
   }
   echo $one_time . ((zen_has_product_attributes_values((int)$_GET['products_id']) and $flag_show_product_info_starting_at == 1) ? TEXT_BASE_PRICE : '') . zen_get_products_display_price((int)$_GET['products_id']);
-?></span>
+?></h2>
 <!--eof Product Price block -->
 
 <!--bof free ship icon  -->
@@ -223,7 +223,7 @@ if (CUSTOMERS_APPROVAL == 3 and TEXT_LOGIN_FOR_PRICE_BUTTON_REPLACE_SHOWROOM == 
   if (zen_not_null($products_url)) {
     if ($flag_show_product_info_url == 1) {
 ?>
-    <p id="productInfoLink" class="docProduct centeredContent"><?php echo sprintf(TEXT_MORE_INFORMATION, zen_href_link(FILENAME_REDIRECT, 'action=url&goto=' . urlencode($products_url), 'NONSSL', true, false)); ?></p>
+    <p id="productInfoLink" class="docProduct centeredContent"><?php echo sprintf(TEXT_MORE_INFORMATION, zen_href_link(FILENAME_REDIRECT, 'action=product&products_id=' . zen_output_string_protected($_GET['products_id']), 'NONSSL', true, false)); ?></p>
 <?php
     } // $flag_show_product_info_url
   }

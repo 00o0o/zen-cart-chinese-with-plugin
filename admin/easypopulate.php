@@ -224,7 +224,7 @@ function kill_breaks($thing) {
 */
 
 // Current EP Version
-$curver = 'For ZenCart v1.5';
+$curver = 'For ZenCart v1.5.x';
 
 $display_output = '';
 $ep_dltype = NULL;

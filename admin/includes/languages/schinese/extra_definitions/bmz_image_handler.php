@@ -1,5 +1,5 @@
 <?php
-/**
+/**IH4
  * bmz_image_handler.php
  * english language definitions for image handler
  *
@@ -14,7 +14,7 @@ define('BOX_TOOLS_IMAGE_HANDLER', '图像管理<sup>4</sup>');
 define('ICON_IMAGE_HANDLER','图像管理 4');
 define('IH_VERSION_VERSION', '版本');
 define('IH_VERSION_NOT_FOUND', '没有找到图像管理模块。');
-define('IH_REMOVE', '删除图像管理模块 (注意: 会删除模块文件，重装需要重新下载插件包)');
+define('IH_REMOVE', '删除图像管理模块 (注意: 会删除模块文件，无法重装)');
 define('IH_CONFIRM_REMOVE', '确定吗?');
 define('IH_REMOVED', '成功删除图像管理模块。');
 define('IH_UPDATE', '更新图像管理模块');
@@ -47,6 +47,7 @@ define('TABLE_HEADING_DEFAULT_SIZE','默认尺寸');
 define('TABLE_HEADING_MEDIUM_SIZE', '中尺寸');
 define('TABLE_HEADING_LARGE_SIZE','大尺寸');
 define('TABLE_HEADING_ACTION', '操作');
+define('TABLE_HEADING_FILETYPE', '文件类型');
 
 define('TEXT_PRODUCT_INFO', '商品');
 define('TEXT_PRODUCTS_MODEL', '型号');

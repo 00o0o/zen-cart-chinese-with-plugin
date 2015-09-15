@@ -5,6 +5,7 @@
  * @copyright Portions Copyright 2003 osCommerce
  * @license http://www.zen-cart.com/license/2_0.txt GNU Public License V2.0
  * @version $Id: login.php 19286 2011-07-28 15:42:33Z drbyte $
+ * @Simplified Chinese version   http://www.zen-cart.cn
  * @version GIT: $Id: Author: DrByte  Mon Jul 16 14:10:24 2012 -0400 Modified in v1.5.1 $
  */
 

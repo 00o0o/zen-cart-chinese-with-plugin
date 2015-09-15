@@ -1,14 +1,15 @@
 <?php
 /**
  * image_handler.php
- * IH2 admin interface
+ * IH 4.3.2 admin interface
  *
  * @author  Tim Kroeger (original author)
  * @copyright Copyright 2005-2006
  * @license http://www.gnu.org/licenses/gpl.txt GNU General Public License V2.0
  * @version $Id: image_handler.php,v 2.0 Rev 8 2010-05-31 23:46:5 DerManoMann Exp $
- * Last modified by DerManoMann 2010-05-31 23:46:50 
- # And again by Nigelt74 2012- 02-18
+ * DerManoMann 2010-05-31 23:46:50 
+ * Nigelt74 2012-02-18
+ * torvista 2012-04-14  
  */
 
   require('includes/application_top.php');
@@ -151,7 +152,7 @@
 
   if ($action == 'set_products_filter') {  
     $_GET['products_filter'] = $_POST['products_filter']; 
-    zen_redirect(zen_href_link(FILENAME_IMAGE_HANDLER, 'page=manager&products_filter=' . $_GET['products_filter']));
+    zen_redirect(zen_href_link(FILENAME_IMAGE_HANDLER, 'page=manager&amp;products_filter=' . $_GET['products_filter']));
   }
 
   if ($page == 'manager') {
@@ -210,17 +211,18 @@
   
   
 ?>
-<!doctype html public "-//W3C//DTD HTML 4.01 Transitional//EN">
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<!--doctype changed to stop quirks mode -->
 <html <?php echo HTML_PARAMS; ?>>
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=<?php echo CHARSET; ?>">
-<title><?php echo TITLE; ?></title>
+<title><?php echo TITLE . ' - '. ICON_IMAGE_HANDLER; ?></title>
 <link rel="stylesheet" type="text/css" href="includes/stylesheet.css">
 <link rel="stylesheet" type="text/css" href="includes/cssjsmenuhover.css" media="all" id="hoverJS">
-<script language="javascript" src="includes/menu.js"></script>
-<script language="javascript" src="includes/general.js"></script>
+<script language="javascript" type="text/javascript" src="includes/menu.js"></script>
+<script language="javascript" type="text/javascript" src="includes/general.js"></script>
 <link rel="stylesheet" type="text/css" href="includes/javascript/spiffyCal/spiffyCal_v2_1.css">
-<script language="JavaScript" src="includes/javascript/spiffyCal/spiffyCal_v2_1.js"></script>
+<script language="javascript" type="text/javascript" src="includes/javascript/spiffyCal/spiffyCal_v2_1.js"></script>
 
 <script type="text/javascript">
   <!--
@@ -261,7 +263,6 @@
   h5 {font-size: 100%}
 
   h1 a, h2 a, h3 a, h4 a, h5 a {
-     /*font-family: Georgia,"Times New Roman",serif;*/
      font-weight: bold;
      letter-spacing: 0.1em;
      word-spacing: 0.2em;
@@ -278,7 +279,7 @@
 
   div.aboutbox {
     /*margin: 0 auto;*/
-    width: 65%;
+  width: 95%;
     /*text-align:center;*/
   }
   
@@ -375,7 +376,7 @@ if ($page == 'manager') {
 ?>
 </div>
 
-<div style="clear:both">
+<div style="clear:both"></div>
 
 <ul style="background-color:#F5F5F5; border: solid #CCCCCC; border-width: 1px 0px;">
   <li style="display:inline; padding:2px 5px; <?php echo ($page == 'manager') ? 'background:#CCCCCC;' : ''; ?>">
@@ -441,7 +442,7 @@ if ($action == 'ih_scan_originals') {
 if (count($ih_admin_actions) > 0) {
 	echo '<ul>';
 	foreach ($ih_admin_actions as $action_name => $link_name) {
-		echo '<li><a href="' . zen_href_link(FILENAME_IMAGE_HANDLER, 'page=admin&action=' . $action_name) . '">' . $link_name . '</a></li>';
+		echo '<li><a href="' . zen_href_link(FILENAME_IMAGE_HANDLER, 'page=admin&amp;action=' . $action_name) . '">' . $link_name . '</a></li>';
 	}
 	echo '</ul>';
 }
@@ -455,7 +456,9 @@ if (count($ih_admin_actions) > 0) {
 
 if ($page == 'manager') {
   $curr_page = FILENAME_IMAGE_HANDLER;
+echo '<table summary="Products Previous Next Display">'; 
     require(DIR_WS_MODULES . FILENAME_PREV_NEXT_DISPLAY);
+echo '</table>';	
 ?>
 
 		  
@@ -467,10 +470,10 @@ if ($page == 'manager') {
 	  <?php //echo zen_draw_hidden_field('action', 'set_products_filter'); // superflous hack - ?>
  
 		  
-        <table border="0" cellspacing="0" cellpadding="2">
+        <table summary="Manager Table" border="0" cellspacing="0" cellpadding="2">
           <tr>
             <td class="main" width="200" align="left" valign="top">&nbsp;</td>
-            <td colspan="2" class="main"><?php echo TEXT_PRODUCT_TO_VIEW; ?></td>
+            <td colspan="2" class="main"><?php if (isset($_POST['products_filter'])) echo TEXT_PRODUCT_TO_VIEW; ?></td>
           </tr>
           <tr>
             <td class="main" width="200" align="center" valign="top">
@@ -481,34 +484,35 @@ if ($page == 'manager') {
 	} 
 	//------  Nigel --End ugly hack
 // FIX HERE
-if ($_GET['products_filter'] != '') {
+if ($_GET['products_filter'] != '') {//a category with products has been selected
   $display_priced_by_attributes = zen_get_products_price_is_priced_by_attributes($_GET['products_filter']);
   echo ($display_priced_by_attributes ? '<span class="alert">' . TEXT_PRICED_BY_ATTRIBUTES . '</span>' . '<br />' : '');
   echo zen_get_products_display_price($_GET['products_filter']) . '<br /><br />';
   echo zen_get_products_quantity_min_units_display($_GET['products_filter'], $include_break = true);
   $not_for_cart = $db->Execute("select p.products_id from " . TABLE_PRODUCTS . " p left join " . TABLE_PRODUCT_TYPES . " pt on p.products_type= pt.type_id where pt.allow_add_to_cart = 'N'");
-} else {
+} else {//no category with products has been selected or its the first landing on admin page: nothing to show in products drop down
   echo '';
   $not_for_cart = new stdClass();
   $not_for_cart->fields = array();
 }
-?>
-            </td>
+echo '</td>';
+if (isset($products_filter)) { //prevent creation of empty Select ?>
             <td class="attributes-even" align="center"><?php echo zen_draw_products_pull_down('products_filter', 'size="5"', $not_for_cart->fields, true, $_GET['products_filter'], true, true); ?></td>
             <td class="main" align="center" valign="top">
               <?php
                 echo zen_image_submit('button_display.gif', IMAGE_DISPLAY);
               ?>
             </td>
+            <?php } else {echo '<td>&nbsp;</td><td>&nbsp;</td>';} ?>
           </tr>
 
         <tr>
           <td colspan="3">
-            <table>
+            <table summary="Product List">
 
 <?php
 // show when product is linked
-if (zen_get_product_is_linked($products_filter) == 'true') {
+if ((isset($products_filter)) && zen_get_product_is_linked($products_filter) == 'true') {
 ?>
               <tr>
                 <td class="main" align="center" valign="bottom">
@@ -520,9 +524,9 @@ if (zen_get_product_is_linked($products_filter) == 'true') {
                 <td class="main" align="center" valign="bottom">
 <?php
   if ($_GET['products_filter'] != '') {
-    echo '<a href="' . zen_href_link(FILENAME_CATEGORIES, 'action=new_product' . '&cPath=' . $current_category_id . '&pID=' . $products_filter . '&product_type=' . zen_get_products_type($products_filter)) . '">' . zen_image_button('button_edit_product.gif', IMAGE_EDIT_PRODUCT) . '<br />' . TEXT_PRODUCT_EDIT . '</a>';
+    echo '<a href="' . zen_href_link(FILENAME_CATEGORIES, 'action=new_product' . '&amp;cPath=' . $current_category_id . '&amp;pID=' . $products_filter . '&amp;product_type=' . zen_get_products_type($products_filter)) . '">' . zen_image_button('button_edit_product.gif', IMAGE_EDIT_PRODUCT) . '<br />' . TEXT_PRODUCT_EDIT . '</a>';
     echo '</td><td class="main" align="center" valign="bottom">';
-    echo '<a href="' . zen_href_link(FILENAME_ATTRIBUTES_CONTROLLER, 'products_filter=' . $products_filter . '&current_category_id=' . $current_category_id, 'NONSSL') . '">' . zen_image_button('button_edit_attribs.gif', IMAGE_EDIT_ATTRIBUTES) . '<br />' . TEXT_ATTRIBUTE_EDIT . '</a>' . '&nbsp;&nbsp;&nbsp;';
+    echo '<a href="' . zen_href_link(FILENAME_ATTRIBUTES_CONTROLLER, 'products_filter=' . $products_filter . '&amp;current_category_id=' . $current_category_id, 'NONSSL') . '">' . zen_image_button('button_edit_attribs.gif', IMAGE_EDIT_ATTRIBUTES) . '<br />' . TEXT_ATTRIBUTE_EDIT . '</a>' . '&nbsp;&nbsp;&nbsp;';
   }
 ?>
                 </td>
@@ -542,7 +546,7 @@ if (zen_get_product_is_linked($products_filter) == 'true') {
 // start of attributes display
 if ($products_filter == '') {
 ?>
-    <h2><?php echo HEADING_TITLE_PRODUCT_SELECT; ?></h2>
+    <h2><?php echo IH_HEADING_TITLE_PRODUCT_SELECT; ?></h2>
 <?php 
 } else {
   // Get the details for the product
@@ -607,14 +611,13 @@ if ($products_filter == '') {
 <?php
   if ($pInfo->products_id != '') {
 ?>
-    <h2>
-      <?php echo TEXT_PRODUCT_INFO . ': #' . $pInfo->products_id . '&nbsp;&nbsp;' . $pInfo->products_name; ?>&nbsp;&nbsp;&nbsp;
+    <h4>
+      <?php echo TEXT_PRODUCT_INFO . ': #' . $pInfo->products_id . '&nbsp;&nbsp;' . $pInfo->products_name; ?>
       <?php 
         if ($pInfo->products_model != '') {
-          echo TEXT_PRODUCTS_MODEL . ': ' . $pInfo->products_model; 
+          echo '<br />'.TEXT_PRODUCTS_MODEL . ': ' . $pInfo->products_model; 
         }
       ?>
-      &nbsp;&nbsp;&nbsp;
       <?php 
         if ($pInfo->products_image != '') {
           if (preg_match("/^([^\/]+)\//", $pInfo->products_image, $matches)) {
@@ -623,7 +626,7 @@ if ($products_filter == '') {
           }
         }
       ?>
-    </h2>
+    </h4>
     <table border="0" width="100%" cellspacing="0" cellpadding="2"><tr><td valign="top">
     <table border="0" width="100%" cellspacing="0" cellpadding="2">
     <tr class="dataTableHeadingRow">
@@ -698,7 +701,7 @@ if ($products_filter == '') {
       // an image is selected, highlight it
       echo '<tr id="defaultSelected" class="dataTableRowSelected" onmouseover="rowOverEffect(this)" onmouseout="rowOutEffect(this)" onclick="document.location.href=\'' 
         . zen_href_link(FILENAME_IMAGE_HANDLER, 'products_filter=' . $_GET['products_filter'] 
-        . '&imgName=' .$tmp_image_name . '&action=layout_edit') . '\'">' . "\n";
+        . '&amp;imgName=' .$tmp_image_name . '&amp;action=layout_edit') . '\'">' . "\n";
         // set some details for later usage
       $selected_image_file = DIR_WS_CATALOG . $tmp_image_file_medium;
       $selected_image_file_large = DIR_WS_CATALOG . $tmp_image_file_large;
@@ -709,7 +712,7 @@ if ($products_filter == '') {
     } else {
       echo '<tr class="dataTableRow" onmouseover="rowOverEffect(this)" onmouseout="rowOutEffect(this)" onclick="document.location.href=\''
          . zen_href_link(FILENAME_IMAGE_HANDLER, 'products_filter=' . $_GET['products_filter'] 
-         . '&imgName=' . $tmp_image_name . '&action=layout_info') . '\'">' . "\n";
+         . '&amp;imgName=' . $tmp_image_name . '&amp;action=layout_info') . '\'">' . "\n";
     }
 ?>
     
@@ -735,7 +738,7 @@ if ($products_filter == '') {
           echo $text_medium_size . '<br />';
           if (is_file($image_file_medium_full)) {
             echo ' <a href="' . zen_href_link(FILENAME_IMAGE_HANDLER, 'imgName=' 
-              . $image_file_medium . '&products_filter=' . $_GET['products_filter'] . '&action=quick_delete') . '">' 
+              . $image_file_medium . '&amp;products_filter=' . $_GET['products_filter'] . '&amp;action=quick_delete') . '">' 
               . zen_image_button('button_delete.gif', IMAGE_DELETE) . '</a>';
           }
         ?>
@@ -750,7 +753,7 @@ if ($products_filter == '') {
           echo $text_large_size . '<br />';
           if (is_file($image_file_large_full)) {
             echo ' <a href="' . zen_href_link(FILENAME_IMAGE_HANDLER, 'imgName=' 
-              . $image_file_large . '&products_filter=' . $_GET['products_filter'] . '&action=quick_delete') . '">' 
+              . $image_file_large . '&amp;products_filter=' . $_GET['products_filter'] . '&amp;action=quick_delete') . '">' 
               . zen_image_button('button_delete.gif', IMAGE_DELETE) . '</a>';
           }
         ?>
@@ -760,7 +763,7 @@ if ($products_filter == '') {
           echo zen_image(DIR_WS_IMAGES . 'icon_arrow_right.gif', ''); 
         } else { 
           echo '<a href="' . zen_href_link(FILENAME_IMAGE_HANDLER, 'products_filter=' . $_GET['products_filter'] 
-            . '&imgName=' . $tmp_image_name . '&action=layout_info') 
+            . '&amp;imgName=' . $tmp_image_name . '&amp;action=layout_info') 
             . '">' . zen_image(DIR_WS_IMAGES . 'icon_info.gif', IMAGE_ICON_INFO) . '</a>';
         } 
       ?>&nbsp;</td>
@@ -784,14 +787,14 @@ if ($products_filter == '') {
 //      $height = min($height, intval(MEDIUM_IMAGE_HEIGHT)); 
       $heading[] = array('text' => '<strong>' . TEXT_INFO_IMAGE_INFO . '</strong>');
       $contents = array('align' => 'center', 'form' => zen_draw_form('image_define', FILENAME_IMAGE_HANDLER, 
-        'page=' . $_GET['page'] . '&products_filter=' . $_GET['products_filter'] . '&action=save', 'post', 'enctype="multipart/form-data"'));
+        'page=' . $_GET['page'] . '&amp;products_filter=' . $_GET['products_filter'] . '&amp;action=save', 'post', 'enctype="multipart/form-data"'));
           $contents[] = array('text' => '<strong>'.TEXT_INFO_NAME.': </strong>' . $selected_image_name .'<br />');
           $contents[] = array('text' => '<strong>'.TEXT_INFO_FILE_TYPE.': </strong>' . $selected_image_extension .'<br />');
           $contents[] = array('text' => 
               '<script language="javascript" type="text/javascript"><!--
               document.write(\'<a href="javascript:popupWindow(\\\'' . $selected_image_link . '\\\')">' 
               . zen_image($selected_image_file, addslashes($pInfo->products_name), $width, $height) 
-              . '<br />' . TEXT_CLICK_TO_ENLARGE . '</a>\');'
+              . '<br />' . TEXT_CLICK_TO_ENLARGE . '<\/a>\');'
               .'//-->'
         .'</script>
         <noscript>'
@@ -802,49 +805,49 @@ if ($products_filter == '') {
       // show new, delete, and edit buttons
       $contents[] = array('align' => 'center', 'text' => '<br />' .
         ' <a href="' . zen_href_link(FILENAME_IMAGE_HANDLER, 'imgName=' 
-        . $_GET['imgName'] . '&products_filter=' . $_GET['products_filter'] . '&action=layout_edit') . '">' 
+        . $_GET['imgName'] . '&amp;products_filter=' . $_GET['products_filter'] . '&amp;action=layout_edit') . '">' 
         . zen_image_button('button_edit.gif', IH_IMAGE_EDIT) . '</a> &nbsp; '
         .' <a href="' . zen_href_link(FILENAME_IMAGE_HANDLER, 'imgName=' 
-        . $_GET['imgName'] . '&products_filter=' . $_GET['products_filter'] . '&action=layout_delete') . '">' 
+        . $_GET['imgName'] . '&amp;products_filter=' . $_GET['products_filter'] . '&amp;action=layout_delete') . '">' 
         . zen_image_button('button_delete.gif', IMAGE_DELETE) . '</a> &nbsp;'
         .' <a href="' . zen_href_link(FILENAME_IMAGE_HANDLER, 
-        '&products_filter=' . $_GET['products_filter'] . '&action=layout_new') . '">' 
+        '&amp;products_filter=' . $_GET['products_filter'] . '&amp;action=layout_new') . '">' 
         . zen_image_button('button_new_file.gif', IH_IMAGE_NEW_FILE) . '</a>');
       
       break;
     case 'layout_edit':
       // Edit specific details 
-      $imgNameStr = '&imgEdit=1' .'&imgBase=' . $products_image_base
-          . "&imgSuffix=" . $selected_image_suffix
-          . "&imgBaseDir=" . $products_image_directory 
-          . "&imgExtension=" . $selected_image_extension;
+      $imgNameStr = '&amp;imgEdit=1' .'&amp;imgBase=' . $products_image_base
+          . "&amp;imgSuffix=" . $selected_image_suffix
+          . "&amp;imgBaseDir=" . $products_image_directory 
+          . "&amp;imgExtension=" . $selected_image_extension;
       $heading[] = array('text' => '<strong>' . TEXT_INFO_EDIT_PHOTO . '</strong>');
 
     case 'layout_new':  
       
 /*      if ( $action != 'layout_edit' ) {
-        $imgNameStr .= ( $no_images ) ? "&newImg=1" : '&imgBase='.$products_image_base
-          . "&imgBaseDir=" . $products_image_directory 
-          . "&imgExtension=" . $products_image_extension;
+        $imgNameStr .= ( $no_images ) ? "&newImg=1" : '&amp;imgBase='.$products_image_base
+          . "&amp;imgBaseDir=" . $products_image_directory 
+          . "&amp;imgExtension=" . $products_image_extension;
         $heading[] = array('text' => '<strong>' . TEXT_INFO_NEW_PHOTO . '</strong>');
       }
  */     
       if ( $action != 'layout_edit' ) {
-        $imgNameStr .= ( $no_images ) ? "&newImg=1" : '&imgBase='.$products_image_base
-          . "&imgBaseDir=" . $products_image_directory 
-          . "&imgExtension=" . $default_extension;
+        $imgNameStr .= ( $no_images ) ? "&amp;newImg=1" : '&amp;imgBase='.$products_image_base
+          . "&amp;imgBaseDir=" . $products_image_directory 
+          . "&amp;imgExtension=" . $default_extension;
         $heading[] = array('text' => '<strong>' . TEXT_INFO_NEW_PHOTO . '</strong>');
       }
       
       
       $contents = array('form' => zen_draw_form('image_define', FILENAME_IMAGE_HANDLER, 
         '&products_filter=' . $_GET['products_filter'] . $imgNameStr
-        .'&action=save', 'post', 'enctype="multipart/form-data"'));
+        .'&amp;action=save', 'post', 'enctype="multipart/form-data"'));//steve check this &products_filter=
 
       // check if this is a master image or if no images exist
       if ($no_images) {
         $contents[] = array('text' => '<strong>'.TEXT_INFO_IMAGE_BASE_NAME.'</strong><br />' );
-        $contents[] = array('text' => zen_draw_input_field('imgBase', '', 30));
+        $contents[] = array('text' => zen_draw_input_field('imgBase', '', 'size="30"'));
               
         $dir = @dir(DIR_FS_CATALOG_IMAGES);
             $dir_info[] = array('id' => '', 'text' => TEXT_INFO_MAIN_DIR);
@@ -861,11 +864,11 @@ if ($products_filter == '') {
             }
             $contents[] = array('text' => '<br /><strong>'.TEXT_INFO_BASE_DIR.'</strong><br />'.TEXT_INFO_NEW_DIR);
             $contents[] = array('text' => TEXT_INFO_IMAGE_DIR . zen_draw_pull_down_menu('imgBaseDir', $dir_info, ""));
-            $contents[] = array('text' => TEXT_INFO_OR.' ' . zen_draw_input_field('imgNewBaseDir', '', 20) );
+            $contents[] = array('text' => TEXT_INFO_OR.' ' . zen_draw_input_field('imgNewBaseDir', '', 'size="20"') );
 
       } else if ($action != 'layout_edit') {
             $contents[] = array('text' => '<strong>'.TEXT_INFO_IMAGE_SUFFIX.'</strong><br />'.TEXT_INFO_USE_AUTO_SUFFIX.'<br />' );
-            $contents[] = array('text' => zen_draw_input_field('imgSuffix', $selected_image_suffix, 10) );
+            $contents[] = array('text' => zen_draw_input_field('imgSuffix', $selected_image_suffix, 'size="10"') );
       }
 
       // Image fields
@@ -874,11 +877,11 @@ if ($products_filter == '') {
 		//-------------------------
       $contents[] = array('text' => '<br /><strong>' . TEXT_INFO_DEFAULT_IMAGE . '</strong>&nbsp;&nbsp;<strong class="errorText">(required)</strong><br />' 
           . TEXT_INFO_DEFAULT_IMAGE_HELP . '<br />'
-          . zen_draw_input_field('default_image', '', ' size="20" ', false, 'file') . '<br />' . $pInfo->products_image);
+          . zen_draw_input_field('default_image', '', 'size="20" ', false, 'file') . '<br />' . $pInfo->products_image);
 		} else { // this section is the original code
       $contents[] = array('text' => '<br /><strong>' . TEXT_INFO_DEFAULT_IMAGE . '</strong><br />' 
           . TEXT_INFO_DEFAULT_IMAGE_HELP . '<br />'
-          . zen_draw_input_field('default_image', '', ' size="20" ', false, 'file') . '<br />' . $pInfo->products_image);
+          . zen_draw_input_field('default_image', '', 'size="20" ', false, 'file') . '<br />' . $pInfo->products_image);
 			
 		}
 
@@ -895,17 +898,17 @@ if ($products_filter == '') {
       }
 
        $contents[] = array('text' => '<br /><strong>' . TEXT_MEDIUM_FILE_IMAGE . '</strong><br />' . 
-          zen_draw_input_field('medium_image', '', ' size="20" ', false, 'file') . '<br />');
+          zen_draw_input_field('medium_image', '', 'size="20" ', false, 'file') . '<br />');
       $contents[] = array('text' => '<br /><strong>' . TEXT_LARGE_FILE_IMAGE . '</strong><br />' .
-          zen_draw_input_field('large_image', '', ' size="20" ', false, 'file') . '<br />');
+          zen_draw_input_field('large_image', '', 'size="20" ', false, 'file') . '<br />');
       $contents[] = array('align' => 'center', 'text' => '<br />' . zen_image_submit('button_save.gif', IMAGE_SAVE) );
       break;
     case 'layout_delete':
 
-      $imgStr = "&imgBase=" . $products_image_base
-          . "&imgSuffix=" . $selected_image_suffix
-          . "&imgBaseDir=" . $products_image_directory 
-          . "&imgExtension=" . $selected_image_extension;
+      $imgStr = "&amp;imgBase=" . $products_image_base
+          . "&amp;imgSuffix=" . $selected_image_suffix
+          . "&amp;imgBaseDir=" . $products_image_directory 
+          . "&amp;imgExtension=" . $selected_image_extension;
           
       // show new button      
       $heading[] = array('text' => '<strong>' . TEXT_INFO_CONFIRM_DELETE . '</strong>');
@@ -918,18 +921,18 @@ if ($products_filter == '') {
 
       $contents[] = array('align' => 'center', 'text' => '<br />'
         .' <a href="' . zen_href_link(FILENAME_IMAGE_HANDLER, 
-        '&products_filter=' . $_GET['products_filter'] . '&action=delete' 
+        '&amp;products_filter=' . $_GET['products_filter'] . '&amp;action=delete' 
         . $imgStr ) . '">' 
         . zen_image_button( 'button_delete.gif', IMAGE_DELETE ) . '</a>');
       break;
     default:
       // show new button      
       $heading[] = array('text' => '<strong>' . TEXT_INFO_SELECT_ACTION . '</strong>');
-      $contents = array('form' => zen_draw_form('image_define', FILENAME_PRODUCT_TYPES, 'page=' . $_GET['page'] . '&action=new', 'post', 'enctype="multipart/form-data"'));
+      $contents = array('form' => zen_draw_form('image_define', FILENAME_PRODUCT_TYPES, 'page=' . $_GET['page'] . '&amp;action=new', 'post', 'enctype="multipart/form-data"'));
       $contents[] = array('text' => '<br />' . TEXT_INFO_CLICK_TO_ADD);
       $contents[] = array('align' => 'center', 'text' => '<br />'
         .' <a href="' . zen_href_link(FILENAME_IMAGE_HANDLER, 
-        '&products_filter=' . $_GET['products_filter'] . '&action=layout_new') . '">' 
+        '&amp;products_filter=' . $_GET['products_filter'] . '&amp;action=layout_new') . '">' 
         . zen_image_button('button_new_file.gif', IH_IMAGE_NEW_FILE) . '</a>');
       break;
   }
@@ -980,7 +983,7 @@ if ($page == 'preview') {
   $images['giflarge'] = $gifimage->get_resized_image($ihConf['large']['width'], $ihConf['large']['height'], 'large');
   
 ?>
-  <table style="background-color:#F5F5F5" cellspacing="0" cellpadding="5px" border="0">
+  <table summary="Preview Images" style="background-color:#F5F5F5" cellspacing="0" cellpadding="5" border="0">
   	<tr>
   		<th style="border-bottom: 1px solid #CCCCCC; border-right: 1px solid #CCCCCC"><?php echo IH_SOURCE_TYPE; ?></th>
   		<th style="border-bottom: 1px solid #CCCCCC"><?php echo IH_SOURCE_IMAGE; ?></th>
@@ -990,23 +993,23 @@ if ($page == 'preview') {
   	<!-- source png row -->
   	<tr>
   		<td style="border-right: 1px solid #CCCCCC"><strong>png</strong></td>
-  		<td><img style="border: 1px solid #000000; background:url(images/checkpattern.gif)" src="<?php echo HTTP_SERVER . DIR_WS_CATALOG . $images['pngsource']?>" /></td>
-  		<td><img style="border: 1px solid #000000; background:url(images/checkpattern.gif)" src="<?php echo HTTP_SERVER . DIR_WS_CATALOG . $images['pngsmall']?>" /></td>
-  		<td><img style="border: 1px solid #000000; background:url(images/checkpattern.gif)" src="<?php echo HTTP_SERVER . DIR_WS_CATALOG . $images['pngmedium']?>" /></td>
+  		<td><img style="border: 1px solid #000000; background:url(images/checkpattern.gif)" src="<?php echo HTTP_SERVER . DIR_WS_CATALOG . $images['pngsource']?>" alt="png source" title="png source" /></td>
+  		<td><img style="border: 1px solid #000000; background:url(images/checkpattern.gif)" src="<?php echo HTTP_SERVER . DIR_WS_CATALOG . $images['pngsmall']?>" alt="png small" title="png small" /></td>
+  		<td><img style="border: 1px solid #000000; background:url(images/checkpattern.gif)" src="<?php echo HTTP_SERVER . DIR_WS_CATALOG . $images['pngmedium']?>" alt="png medium" title="png medium" /></td>
   	</tr>
   	<!-- source jpg row -->
   	<tr>
   		<td style="border-right: 1px solid #CCCCCC"><strong>jpg</strong></td>
-  		<td><img style="border: 1px solid #000000; background:url(images/checkpattern.gif)" src="<?php echo HTTP_SERVER . DIR_WS_CATALOG . $images['jpgsource']?>" /></td>
-  		<td><img style="border: 1px solid #000000; background:url(images/checkpattern.gif)" src="<?php echo HTTP_SERVER . DIR_WS_CATALOG . $images['jpgsmall']?>" /></td>
-  		<td><img style="border: 1px solid #000000; background:url(images/checkpattern.gif)" src="<?php echo HTTP_SERVER . DIR_WS_CATALOG . $images['jpgmedium']?>" /></td>
+  		<td><img style="border: 1px solid #000000; background:url(images/checkpattern.gif)" src="<?php echo HTTP_SERVER . DIR_WS_CATALOG . $images['jpgsource']?>" alt="jpg source" title="jpg source" /></td>
+  		<td><img style="border: 1px solid #000000; background:url(images/checkpattern.gif)" src="<?php echo HTTP_SERVER . DIR_WS_CATALOG . $images['jpgsmall']?>" alt="jpg small" title="jpg small" /></td>
+  		<td><img style="border: 1px solid #000000; background:url(images/checkpattern.gif)" src="<?php echo HTTP_SERVER . DIR_WS_CATALOG . $images['jpgmedium']?>" alt="jpg medium" title="jpg medium" /></td>
   	</tr>
   	<!-- source gif row -->
   	<tr style="border-right: 1px solid #CCCCCC">
   		<td style="border-right: 1px solid #CCCCCC"><strong>gif</strong></td>
-  		<td><img style="border: 1px solid #000000; background:url(images/checkpattern.gif)" src="<?php echo HTTP_SERVER . DIR_WS_CATALOG . $images['gifsource']?>" /></td>
-  		<td><img style="border: 1px solid #000000; background:url(images/checkpattern.gif)" src="<?php echo HTTP_SERVER . DIR_WS_CATALOG . $images['gifsmall']?>" /></td>
-  		<td><img style="border: 1px solid #000000; background:url(images/checkpattern.gif)" src="<?php echo HTTP_SERVER . DIR_WS_CATALOG . $images['gifmedium']?>" /></td>
+  		<td><img style="border: 1px solid #000000; background:url(images/checkpattern.gif)" src="<?php echo HTTP_SERVER . DIR_WS_CATALOG . $images['gifsource']?>" alt="gif source" title="gif source" /></td>
+  		<td><img style="border: 1px solid #000000; background:url(images/checkpattern.gif)" src="<?php echo HTTP_SERVER . DIR_WS_CATALOG . $images['gifsmall']?>" alt="gif small" title="gif small" /></td>
+  		<td><img style="border: 1px solid #000000; background:url(images/checkpattern.gif)" src="<?php echo HTTP_SERVER . DIR_WS_CATALOG . $images['gifmedium']?>" alt="gif medium" title="gif medium" /></td>
   	</tr>
   </table>
 <?php
@@ -1027,27 +1030,27 @@ if ($page == 'about') {
 Image Handler<sup>4</sup> v4.0 for v1.5.x is based on an original contribution by Tim Kr&#246;ger.<br /></p>
 <fieldset>
 <legend>Purpose &amp; Aim</legend>
-<p>Image Handler<sup>4</sup> at the heart of it's code is really meant to ease the management of product images (particularly the management of additional product images), and to help improve page performance by
-  optimizing the product images.</p>
-<p>Image Handler<sup>4</sup> generates product images (based on your image settings) in the Image Handler<sup>4</sup> bmz_cache folder. It <strong>DOES NOT</strong> replace or modify the original images. So it's PERFECTLY safe to use on an existing store.</p>
-<p> Image Handler<sup>4</sup> enables you to use GD libraries or ImageMagick (if   installed on your server) to generate and resize small, medium and large   images on the fly on page request. You can simply upload just one image   or you can have different sources for medium and large images. Image Handler<sup>4</sup> further enables you to watermark your images (overlay a second   specific translucent image) and have medium or large images pop up when you move   your mouse over a small image (fancy hover).</p>
+<p>Image Handler<sup>4</sup> at the heart of it's code is really meant to ease the management of product images (particularly the management of additional product images), and to help improve page performance by optimizing the product images.</p>
+<p>Image Handler<sup>4</sup> generates product images (based on your image settings) in the Image Handler<sup>4</sup> CATALOG/bmz_cache folder. It <strong>DOES NOT</strong> replace or modify the original images. So it's PERFECTLY safe to use on an existing store.</p>
+<p> Image Handler<sup>4</sup> enables you to use GD libraries or ImageMagick (if installed on your server) to generate and resize small, medium and large images on-the-fly/on page request. You can simply upload just one large image (that gets resized as required) or you can have different sources for medium and large images.<br />
+Image Handler<sup>4</sup> also enables you to watermark your images on-the-fly (overlay a second specific translucent image onto the original) and have medium or large images pop up when you move your mouse over a small image (fancy hover).</p>
 <p> This contribution includes a powerful admin interface to browse your   products just like you would with the Attribute Manager and upload /   delete / add additional images without having to do this manually via <acronym title="File Transfer Protocol">FTP</acronym>. Image Handler<sup>4</sup> works fine with mass update utilities like EzPopulate. </p>
 </fieldset>
 <hr>
 <fieldset>
 <legend>Features</legend>
 <ul>
-  <li>Improve site performance (faster loading, faster display)</li>
+  <li>Improves site performance (faster loading, faster display)</li>
   <li>Professional looking images (no stair-effects, smooth edges)</li>
   <li>Choose preferred image-types for each image size</li>
   <li>Uploading one image automatically creates small, medium and large images on page request</li>
   <li>Drops in and out seamlessly. No need to redo your images. All images are kept.</li>
   <li>Easy install. One-click-database-upgrade.</li>
   <li>Works with mass-update/-upload tools like EzPopulate.</li>
-  <li>Watermark images to prevent competitors from stealing them.</li>
-  <li>Fancy image hover functionality lets a larger image pop up whenever you move your mouse above a small image (switchable).</li>
-  <li>Choose an image background color matching to match you site's color or select a transparent background for your images.</li>
-  <li>Manage your multiple images for products easily from one page just like you do with attributes in the Products Attribute Manager.</li>
+  <li>Watermark images to prevent competitors from stealing them. (prove ownership)</li>
+  <li>Fancy image hover functionality lets a larger image pop up whenever you move your mouse above a small image (optional).</li>
+  <li>Choose an image background color to match your site or select a transparent background for your images.</li>
+  <li>Manage multiple images for products easily from one page just like you do with attributes in the Products Attribute Manager.</li>
 </ul>
 <p>Image Handler<sup>4</sup> is meant to ease the work required to setup images for your store.   It works WITH default Zen Cart functionality, it does not replace it. </p>
 <p>It is very strongly recommend you read through the ENTIRE "<strong>Configuration</strong>" &amp; "<strong>Usage</strong>" sections of the Image Handler<sup>4</sup> readme file. There you will find out exactly what <strong>Image Handler<sup>4</sup></strong> can do.</p>
@@ -1061,20 +1064,17 @@ Image Handler<sup>4</sup> v4.0 for v1.5.x is based on an original contribution b
 <p>Make sure Image Handler<sup>4</sup> is installed. <strong>Admin
 &gt; Tools &gt; Image Handler<sup>4</sup> &gt; Admin</strong>.
 Set permissions in both your <strong>images</strong> and <strong>bmz_cache</strong> folders to 755 (eg: <strong>both </strong>of these folders need
-to have  the same permissions. For some webhosts you may have to set these permissions
-to 777).</p>
+to have  the same permissions. For some webhosts you may have to set these permissions to 777).</p>
 <p>If Image Handler<sup>4</sup> does not work or gives you errors:</p>
 <ul>
   <li>Make sure all files are in correct location</li>
-  <li>Make sure you uploaded ALL the Image Handler<sup>4</sup> files
-  </li>
+  <li>Make sure you uploaded ALL the Image Handler<sup>4</sup> files</li>
   <li>Make sure the files are not corrupt from bad FTP transfers</li>
   <li>Make sure your file merge edits are correct</li>
   <li>MAKE SURE YOU RE-READ THE CONFIGURATION AND USAGE SECTIONS!!!</li>
   <li>Make sure that there are no javascript conflicts (this last point has been largely addressed since Rev 7)</li>
   <li>Make sure that your main product image files names DO NOT contain any special characters (<font>non-alphanumeric characters such as / \ :
-! @ # $ % ^ &lt; &gt; , [ ] { } &amp; * ( ) + = </font>). Always use
-proper filenaming practices when naming your images - See this document as a reference: <small><a href="http://www.records.ncdcr.gov/erecords/filenaming_20080508_final.pdf" target="_blank">http://www.records.ncdcr.gov/erecords/filenaming_20080508_final.pdf\</a></small></li>
+! @ # $ % ^ &lt; &gt; , [ ] { } &amp; * ( ) + = </font>). Always use proper filenaming practices when naming your images - See this document as a reference: <small><a href="http://www.records.ncdcr.gov/erecords/filenaming_20080508_final.pdf" target="_blank">http://www.records.ncdcr.gov/erecords/filenaming_20080508_final.pdf\</a></small></li>
 </ul>
 </fieldset>
 
@@ -1110,7 +1110,7 @@ proper filenaming practices when naming your images - See this document as a ref
   ---------------------------------- <br>
   /images/widgets/blue_widget1.jpg (main product image for a blue widget, i.e. front view)<br>
   /images/widgets/blue_widget2.jpg (additional product image for a blue widget, i.e. side view)<br>
-  /images/widgets/blue_widget3.jpg (additional product image for a blue widdget, i.e. rear view)</p>
+  /images/widgets/blue_widget3.jpg (additional product image for a blue widget, i.e. rear view)</p>
 <p>&nbsp;</p>
 <p>Product: Red Widget with 1 image<br>
   --------------------------------<br>
@@ -1131,10 +1131,10 @@ proper filenaming practices when naming your images - See this document as a ref
 </fieldset>
 
 </div>
-</div>
+
 <?php
 }
-?>
+?></div>
 <!-- body_eof //-->
 <!-- footer //-->
 <?php

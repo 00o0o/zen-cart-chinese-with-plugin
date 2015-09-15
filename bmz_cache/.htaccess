@@ -30,7 +30,7 @@
 </FilesMatch>
 
 IndexIgnore */*
-Options -Indexes
+
 
 ## NOTE: If you want even greater security to prevent hackers from running scripts in this folder, uncomment the following line (if your hosting company will allow you to use OPTIONS):
 # OPTIONS -Indexes -ExecCGI

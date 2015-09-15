@@ -1,6 +1,6 @@
 <?php
-/**
- * Override Template for common/tpl_main_page.php
+/**mod Image Handler 4.3.2
+ * Override Template for popup_image_additional/tpl_main_page.php
  *
  * @package templateSystem
  * @copyright Copyright 2005-2006 Tim Kroeger

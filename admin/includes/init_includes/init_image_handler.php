@@ -15,7 +15,7 @@ if (!defined('IS_ADMIN_FLAG')) {
     //$uninstall = 'uninstall';
 
     // set version
-    $version = '4.0';
+    $version = '4.3.2';
 
     // flags
     $install_incomplete = false;
@@ -67,15 +67,15 @@ if (!defined('IS_ADMIN_FLAG')) {
             DIR_FS_ADMIN.'includes/functions/extra_functions/functions_bmz_io.php',
             DIR_FS_ADMIN.'includes/languages/english/extra_definitions/bmz_image_handler.php',
             DIR_FS_ADMIN.'includes/languages/english/extra_definitions/bmz_language_admin.php',
-            DIR_FS_ADMIN.'includes/modules/category_product_listing.DEFAULT.php.bak',
-            DIR_FS_CATALOG.'includes/modules/pages/popup_image/header_php.DEFAULT.php.bak',
-            DIR_FS_CATALOG.'includes/modules/pages/popup_image_additional/header_php.DEFAULT.php.bak'
+            DIR_FS_ADMIN.'includes/modules/category_product_listing.DEFAULT.php.OLD.IH4',
+            DIR_FS_CATALOG.'includes/modules/pages/popup_image/header_php.DEFAULT.php.OLD.IH4',
+            DIR_FS_CATALOG.'includes/modules/pages/popup_image_additional/header_php.DEFAULT.php.OLD.IH4'
              );
 
     // core files with overwrite
-    // these are rolled back to Zen Default on uninstalll - the .bak file is left in place
+    // these are rolled back to Zen Default on uninstalll - the .OLD.IH4 file is left in place
     // files arranged in array (file_to_replace,file_to_replace_with)
-    // file_to_replace will be resaved as file_to_replace.bak
+    // file_to_replace will be resaved as file_to_replace.OLD.IH4
     $core_files = array(
             array(DIR_FS_ADMIN.'includes/modules/category_product_listing.php',DIR_FS_ADMIN.'includes/modules/category_product_listing_IH4.php'),
             array(DIR_FS_CATALOG.'includes/modules/pages/popup_image/header_php.php',DIR_FS_CATALOG.'includes/modules/pages/popup_image/header_php_IH4.php'),
@@ -85,19 +85,19 @@ if (!defined('IS_ADMIN_FLAG')) {
     // core files for rollback on uninstall 
     // not used on install
     // files arranged in array (file_to_replace,file_to_replace_with)
-    // file_to_replace will be resaved as file_to_replace.bak
+    // file_to_replace will be resaved as file_to_replace.OLD.IH4
     $rollback_files = array(
-            array(DIR_FS_ADMIN.'includes/modules/category_product_listing.php',DIR_FS_ADMIN.'includes/modules/category_product_listing.DEFAULT.php.bak'),
-            array(DIR_FS_CATALOG.'includes/modules/pages/popup_image/header_php.php',DIR_FS_CATALOG.'includes/modules/pages/popup_image/header_php.DEFAULT.php.bak'),
-            array(DIR_FS_CATALOG.'includes/modules/pages/popup_image_additional/header_php.php',DIR_FS_CATALOG.'includes/modules/pages/popup_image_additional/header_php.DEFAULT.php.bak'),
+            array(DIR_FS_ADMIN.'includes/modules/category_product_listing.php',DIR_FS_ADMIN.'includes/modules/category_product_listing.DEFAULT.php.OLD.IH4'),
+            array(DIR_FS_CATALOG.'includes/modules/pages/popup_image/header_php.php',DIR_FS_CATALOG.'includes/modules/pages/popup_image/header_php.DEFAULT.php.OLD.IH4'),
+            array(DIR_FS_CATALOG.'includes/modules/pages/popup_image_additional/header_php.php',DIR_FS_CATALOG.'includes/modules/pages/popup_image_additional/header_php.DEFAULT.php.OLD.IH4'),
             );
 
 
 
     // template files
-    // these are deleted on uninstall - the .bak file is left in place
+    // these are deleted on uninstall - the .OLD.IH4 file is left in place
     // files arranged in array (file_to_replace,file_to_replace_with)
-    // file_to_replace will be resaved as file_to_replace.bak
+    // file_to_replace will be resaved as file_to_replace.OLD.IH4
     $template_files = array(
             array(DIR_FS_CATALOG.'includes/modules/'.$current_template.'/additional_images.php',DIR_FS_CATALOG.'includes/modules/IH_INSTALL/additional_images.php'),
             array(DIR_FS_CATALOG.'includes/modules/'.$current_template.'/main_product_image.php',DIR_FS_CATALOG.'includes/modules/IH_INSTALL/main_product_image.php'),
@@ -220,7 +220,7 @@ if($uninstall != 'uninstall' and !$install_incomplete)
     $sql = "SELECT configuration_group_id FROM ".TABLE_CONFIGURATION_GROUP." WHERE configuration_group_title='Images' LIMIT 1";
     $result = $db->Execute($sql);
         $im_configuration_id = $result->fields['configuration_group_id'];
-    if($im_configuration_id == '') $im_configuration_id = 4;
+    if($im_configuration_id=='') $im_configuration_id = 4 ;
 
 
     foreach($menu_items_image as $menu_item)
@@ -294,7 +294,7 @@ if($uninstall != 'uninstall' and !$install_incomplete)
 
     foreach($menu_items_delete as $del)
     {
-        $sql ="DELETE FROM ".TABLE_CONFIGURATION." WHERE configuration_key = '".$del."'";
+        $sql ="DELETE FROM ".TABLE_CONFIGURATION." WHERE configuration_key = '".$del[0]."'";
         $db->Execute($sql);
     }
 
@@ -441,7 +441,7 @@ elseif($uninstall == 'uninstall')
         // move the original
         if(file_exists($path) and file_exists($path_from))
         {
-            $bPath = $path.$extraXXX.'.bak';
+            $bPath = $path.$extraXXX.'.OLD.IH4';
             if(!rename($path,$bPath)){return false;}
         }
     

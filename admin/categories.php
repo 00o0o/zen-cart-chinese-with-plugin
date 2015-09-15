@@ -1,23 +1,25 @@
 <?php
 /**
  * @package admin
- * @copyright Copyright 2003-2012 Zen Cart Development Team
+ * @copyright Copyright 2003-2013 Zen Cart Development Team
  * @copyright Portions Copyright 2003 osCommerce
  * @license http://www.zen-cart.com/license/2_0.txt GNU Public License V2.0
- * @version GIT: $Id: Author: Ian Wilson  Tue Aug 7 15:17:58 2012 +0100 Modified in v1.5.1 $
+ * @version GIT: $Id: Author: DrByte  Wed Mar 12 14:41:25 2014 -0400 Modified in v1.5.3 $
  */
   require('includes/application_top.php');
 
   require(DIR_WS_MODULES . 'prod_cat_header_code.php');
 
   $action = (isset($_GET['action']) ? $_GET['action'] : '');
+
   if (isset($_GET['page'])) $_GET['page'] = (int)$_GET['page'];
   if (isset($_GET['product_type'])) $_GET['product_type'] = (int)$_GET['product_type'];
+  if (isset($_GET['cID'])) $_GET['cID'] = (int)$_GET['cID'];
 
-  // Ultimate SEO URLs v2.200
+  // Ultimate SEO
   // If the action will affect the cache entries
   if (preg_match("/(insert|update|setflag)/i", $action)) {
-     include_once(DIR_WS_INCLUDES . 'reset_seo_cache.php');
+     usu_reset_cache_data('true');
   }
 
   if (!isset($_SESSION['categories_products_sort_order'])) {
@@ -522,6 +524,24 @@
         }
       }
       break;
+
+      case 'setflag_categories':
+      case 'new_category':
+      case 'edit_category':
+      case 'delete_category':
+      case 'edit_category_meta_tags':
+      case 'move_category':
+      case 'delete_product':
+      case 'move_product':
+      case 'copy_to':
+      case 'attribute_features':
+      case 'attribute_features_copy_to_product':
+      case 'attribute_features_copy_to_category':
+        // handled by another switch/case later
+        break;
+
+      default:
+        $action = $_GET['action'] = '';
     }
   }
 
@@ -586,8 +606,8 @@ function init()
       echo TEXT_EDITOR_INFO . zen_draw_form('set_editor_form', FILENAME_CATEGORIES, '', 'get') . '&nbsp;&nbsp;' . zen_draw_pull_down_menu('reset_editor', $editors_pulldown, $current_editor_key, 'onChange="this.form.submit();"') . zen_hide_session_id() .
             zen_draw_hidden_field('cID', $cPath) .
             zen_draw_hidden_field('cPath', $cPath) .
-            zen_draw_hidden_field('pID', $_GET['pID']) .
-            zen_draw_hidden_field('page', $_GET['page']) .
+            (isset($_GET['pID']) ? zen_draw_hidden_field('pID', $_GET['pID']) : '') .
+            (isset($_GET['page']) ? zen_draw_hidden_field('page', $_GET['page']) : '') .
             zen_draw_hidden_field('action', 'set_editor') .
       '</form>';
 ?>
@@ -637,8 +657,8 @@ function init()
       echo TEXT_CATEGORIES_PRODUCTS_SORT_ORDER_INFO . zen_draw_form('set_categories_products_sort_order_form', FILENAME_CATEGORIES, '', 'get') . '&nbsp;&nbsp;' . zen_draw_pull_down_menu('reset_categories_products_sort_order', $categories_products_sort_order_array, $reset_categories_products_sort_order, 'onChange="this.form.submit();"') . zen_hide_session_id() .
             zen_draw_hidden_field('cID', $cPath) .
             zen_draw_hidden_field('cPath', $cPath) .
-            zen_draw_hidden_field('pID', $_GET['pID']) .
-            zen_draw_hidden_field('page', $_GET['page']) .
+            (isset($_GET['pID']) ? zen_draw_hidden_field('pID', $_GET['pID']) : '') .
+            (isset($_GET['page']) ? zen_draw_hidden_field('page', $_GET['page']) : '') .
             zen_draw_hidden_field('action', 'set_categories_products_sort_order') .
       '</form>';
       ?>

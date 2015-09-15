@@ -1,13 +1,13 @@
 <?php
-/**
- * Override Template for common/tpl_main_page.php
+/**mod Image Handler 4.3.2
+ * Override Template for popup_image_additional/tpl_main_page.php
  *
  * @package templateSystem
  * @copyright Copyright 2005-2006 Tim Kroeger
- * @copyright Copyright 2003-2005 Zen Cart Development Team
+ * @copyright Portions Copyright 2003-2005 Zen Cart Development Team
  * @copyright Portions Copyright 2003 osCommerce
  * @license http://www.zen-cart.com/license/2_0.txt GNU Public License V2.0
- * @version $Id: tpl_main_page.php 2993 2006-02-08 07:14:52Z birdbrain $
+ * @version $Id: tpl_main_page.php,v 2.0 Rev 8 2010-05-31 23:46:5 DerManoMann Exp $
  */
 ?>
 <body id="popupAdditionalImage" class="centeredContent" onload="resize();">

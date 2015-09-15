@@ -1,10 +1,10 @@
 <?php
 /**
  * @package admin
- * @copyright Copyright 2003-2011 Zen Cart Development Team
+ * @copyright Copyright 2003-2014 Zen Cart Development Team
  * @copyright Portions Copyright 2003 osCommerce
  * @license http://www.zen-cart.com/license/2_0.txt GNU Public License V2.0
- * @version $Id: html_output.php 19356 2011-08-22 05:22:42Z drbyte $
+ * @version $Id: html_output.php drbyte Modified in v1.5.4 $
  */
 
 ////
@@ -39,8 +39,8 @@
 
 // Add the session ID when moving from different HTTP and HTTPS servers, or when SID is defined
     if ( ($add_session_id == true) && ($session_started == true) ) {
-      if (defined('SID') && zen_not_null(SID)) {
-        $sid = SID;
+      if (defined('SID') && zen_not_null(constant('SID'))) {
+        $sid = constant('SID');
       } elseif ( ( ($request_type == 'NONSSL') && ($connection == 'SSL') && (ENABLE_SSL_ADMIN == 'true') ) || ( ($request_type == 'SSL') && ($connection == 'NONSSL') ) ) {
 //die($connection);
         if ($http_domain != $https_domain) {
@@ -57,20 +57,18 @@
   }
 
   function zen_catalog_href_link($page = '', $parameters = '', $connection = 'NONSSL') {
+    global $seo_urls;
 
-		if (!isset($GLOBALS['seo_urls']) && !is_object($GLOBALS['seo_urls'])) {
-			include_once(DIR_FS_CATALOG . DIR_WS_CLASSES . 'seo.url.php');
+    $href_link = null;
+  	if(isset($seo_urls)) {
+      $href_link = $seo_urls->href_link($page, $parameters, $connection);
+    }
 
-			$GLOBALS['seo_urls'] = &new SEO_URL($_SESSION['languages_id']);
-		}
+    if($href_link === null) {
+    	$href_link = original_zen_catalog_href_link($page, $parameters, $connection);
+    }
 
-  		/* QUICK AND DIRTY WAY TO DISABLE REDIRECTS ON PAGES WHEN SEO_URLS_ONLY_IN is enabled IMAGINADW.COM */
-		$sefu = explode(",", ereg_replace( ' +', '', SEO_URLS_ONLY_IN ));
-		if((SEO_URLS_ONLY_IN!="") && !in_array($page,$sefu)) {
-			return original_zen_catalog_href_link($page, $parameters, $connection);
-		}
-
-		return $GLOBALS['seo_urls']->href_link($page, $parameters, $connection, false, false, true);
+    return $href_link;
   }
 
   function original_zen_catalog_href_link($page = '', $parameters = '', $connection = 'NONSSL') {
@@ -187,12 +185,57 @@
       }
       $num_country++;
       $countries->MoveNext();
+      $output_string .= '    hideStateField(' . $form . ');' . "\n" ;
     }
     $output_string .= '  } else {' . "\n" .
                       '    ' . $form . '.' . $field . '.options[0] = new Option("' . TYPE_BELOW . '", "");' . "\n" .
+                      '    showStateField(' . $form . ');' . "\n" .
                       '  }' . "\n";
 
     return $output_string;
+  }
+
+  ////
+  // javascript to dynamically update the states/provinces list when the country is changed
+  // TABLES: zones
+  function zen_js_billing_zone_list($country, $form, $field) {
+  	global $db;
+  	$countries = $db->Execute("select distinct zone_country_id
+  			from " . TABLE_ZONES . "
+  			order by zone_country_id");
+
+  	$num_country = 1;
+  	$output_string = '';
+  	while (!$countries->EOF) {
+  		if ($num_country == 1) {
+  			$output_string .= '  if (' . $country . ' == "' . $countries->fields['zone_country_id'] . '") {' . "\n";
+  		} else {
+  			$output_string .= '  } else if (' . $country . ' == "' . $countries->fields['zone_country_id'] . '") {' . "\n";
+  		}
+
+  		$states = $db->Execute("select zone_name, zone_id
+  				from " . TABLE_ZONES . "
+  				where zone_country_id = '" . $countries->fields['zone_country_id'] . "'
+  				order by zone_name");
+
+
+  		$num_state = 1;
+  		while (!$states->EOF) {
+  			if ($num_state == '1') $output_string .= '    ' . $form . '.' . $field . '.options[0] = new Option("' . PLEASE_SELECT . '", "");' . "\n";
+  			$output_string .= '    ' . $form . '.' . $field . '.options[' . $num_state . '] = new Option("' . $states->fields['zone_name'] . '", "' . $states->fields['zone_id'] . '");' . "\n";
+  			$num_state++;
+  			$states->MoveNext();
+  		}
+  		$num_country++;
+  		$countries->MoveNext();
+  		$output_string .= '    hideBillingStateField(' . $form . ');' . "\n" ;
+  	}
+  	$output_string .= '  } else {' . "\n" .
+  			'    ' . $form . '.' . $field . '.options[0] = new Option("' . TYPE_BELOW . '", "");' . "\n" .
+  			'    showBillingStateField(' . $form . ');' . "\n" .
+  			'  }' . "\n";
+
+  	return $output_string;
   }
 
 ////
